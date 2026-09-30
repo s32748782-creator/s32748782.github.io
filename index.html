@@ -227,16 +227,16 @@
       z-index: 1000;
       justify-content: center;
       align-items: center;
-      padding: 8px;
+      padding: 4px;
     }
 
     .modal-content {
       background: white;
       width: 100%;
-      max-width: 650px;
-      max-height: 92vh;
+      max-width: 680px;
+      max-height: 94vh;
       border-radius: 10px;
-      padding: 12px;
+      padding: 10px;
       display: flex;
       flex-direction: column;
       box-shadow: 0 4px 12px rgba(0,0,0,0.2);
@@ -248,7 +248,7 @@
       align-items: center;
       border-bottom: 2px solid #007bff;
       padding-bottom: 8px;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     .modal-title {
@@ -278,16 +278,16 @@
       background: #f8f9fa;
       border: 1px solid #dee2e6;
       border-radius: 6px;
-      padding: 8px;
-      margin-bottom: 10px;
+      padding: 6px;
+      margin-bottom: 8px;
       width: 100%;
     }
 
     .today-card-title {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: bold;
       color: #333;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -299,33 +299,43 @@
       font-weight: normal;
     }
 
+    /* 固定寬度與排版的表格樣式 */
     .today-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 11px;
-      table-layout: fixed;
+      table-layout: fixed; /* 🔥 固定欄寬 */
     }
 
     .today-table th, .today-table td {
       border: 1px solid #ced4da;
-      padding: 5px 2px;
+      padding: 4px 1px;
       text-align: center;
-      word-break: break-all;
+      white-space: nowrap;
       overflow: hidden;
+      text-overflow: ellipsis;
+      font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace; /* 等寬字體讓數字對齊不擠壓 */
+      font-size: 10px;
     }
 
     .today-table th {
       background: #e9ecef;
       color: #495057;
       font-weight: bold;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 10.5px;
     }
 
-    .col-item { width: 12%; }
-    .col-avg  { width: 18%; }
-    .col-orig { width: 17%; }
-    .col-dorig{ width: 18%; }
-    .col-last { width: 17%; }
-    .col-dlast{ width: 18%; }
+    /* 🔥 精準配置欄寬比例：
+       項目極小 (7%)
+       今日平均/原始值/上次值可容納 000.0000 寬度 (各 21%)
+       Δ 原始/Δ 上次只需容納 0.0000 寬度 (各 15%)
+    */
+    .col-item { width: 7%; }  
+    .col-avg  { width: 21%; } 
+    .col-orig { width: 21%; } 
+    .col-dorig{ width: 15%; } 
+    .col-last { width: 21%; } 
+    .col-dlast{ width: 15%; } 
 
     .diff-pos { color: #d9534f; font-weight: bold; }
     .diff-neg { color: #0275d8; font-weight: bold; }
@@ -450,7 +460,6 @@
       el: { hasEnteredToday: false, isUnlocked: false }
     };
 
-    // 🔥 全域小數點 4 位格式化輔助函式
     function to4Decimal(val) {
       if (val === undefined || val === null || val === "" || val === "--") return "--";
       const num = parseFloat(val);
@@ -627,13 +636,11 @@
         return;
       }
 
-      // 原始數據 (第一筆) -> 轉為 4 位小數
       const first = pointRecords[0];
       setVal("eOrig", to4Decimal(first[2]));
       setVal("nOrig", to4Decimal(first[3]));
       setVal("elOrig", to4Decimal(first[4]));
 
-      // 「上次數據」對應非今日的最新紀錄 -> 轉為 4 位小數
       const lastPast = pastRecords.length > 0 ? pastRecords[pastRecords.length - 1] : null;
 
       setVal("eLastAvg", lastPast ? to4Decimal(lastPast[2]) : "--");
@@ -645,7 +652,6 @@
       setVal("elLastAvg", lastPast ? to4Decimal(lastPast[4]) : "--");
       setVal("elLastDetails", lastPast ? `正:${to4Decimal(lastPast[9])} / 倒:${to4Decimal(lastPast[10])}` : "--");
 
-      // 「紀錄時間」與今日鎖定設定
       if (todayRecords.length > 0) {
         const todayLast = todayRecords[todayRecords.length - 1];
         const formattedTime = formatDate(todayLast[0]);
@@ -844,7 +850,7 @@
             <table class="today-table">
               <thead>
                 <tr>
-                  <th class="col-item">項目</th>
+                  <th class="col-item">項</th>
                   <th class="col-avg">今日平均</th>
                   <th class="col-orig">原始值</th>
                   <th class="col-dorig">Δ 原始</th>
