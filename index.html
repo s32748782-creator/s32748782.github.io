@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>石岡經緯儀紀錄表</title>
+  <title>點位數據紀錄系統</title>
   <style>
     *, *::before, *::after { 
       box-sizing: border-box; 
@@ -160,10 +160,6 @@
       flex-shrink: 0;
     }
 
-    .btn-toggle-sign:active {
-      background: #ced4da;
-    }
-
     .btn-submit { 
       width: 100%; 
       padding: 14px; 
@@ -176,6 +172,119 @@
       margin-top: 10px; 
       cursor: pointer;
     }
+
+    .btn-view-today {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: bold;
+      background: #17a2b8;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+
+    /* 今日數據 Modal 彈出視窗樣式 */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background: white;
+      width: 95%;
+      max-width: 600px;
+      max-height: 90vh;
+      border-radius: 10px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #007bff;
+    }
+
+    .btn-close {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      font-size: 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .modal-body {
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    /* 今日數據卡片 */
+    .today-card {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+
+    .today-card-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .today-time {
+      font-size: 12px;
+      color: #28a745;
+      font-weight: normal;
+    }
+
+    .today-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .today-table th, .today-table td {
+      border: 1px solid #ced4da;
+      padding: 6px 4px;
+      text-align: center;
+    }
+
+    .today-table th {
+      background: #e9ecef;
+      color: #495057;
+    }
+
+    .diff-pos { color: #d9534f; font-weight: bold; } /* 正偏差紅 */
+    .diff-neg { color: #0275d8; font-weight: bold; } /* 負偏差藍 */
+    .diff-zero { color: #6c757d; }
   </style>
 </head>
 <body>
@@ -268,6 +377,22 @@
   </div>
 
   <button class="btn-submit" id="submitBtn" onclick="submitData()">儲存並傳送紀錄</button>
+  
+  <!-- 最下方新增按鈕 -->
+  <button class="btn-view-today" onclick="openTodayModal()">📊 今日紀錄數據總覽 (B01-B12)</button>
+
+  <!-- 今日數據 Modal 彈出視窗 -->
+  <div class="modal-overlay" id="todayModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">今日紀錄數據與誤差總覽</div>
+        <button class="btn-close" onclick="closeTodayModal()">關閉</button>
+      </div>
+      <div class="modal-body" id="todayModalBody">
+        <!-- 今日數據會自動產生於此 -->
+      </div>
+    </div>
+  </div>
 
   <script>
     // ⚠️ 請填入您 Apps Script 部署發布後的 Web App URL
@@ -304,15 +429,12 @@
     function toggleSign(inputId, type) {
       const input = document.getElementById(inputId);
       let val = input.value.trim();
-
       if (!val) return;
-
       if (val.startsWith('-')) {
         input.value = val.substring(1);
       } else {
         input.value = '-' + val;
       }
-
       updateLiveAvg(type);
     }
 
@@ -320,18 +442,14 @@
     function handleInput(input, type) {
       let val = input.value;
       const isNegative = val.startsWith('-');
-
       val = val.replace(/[^0-9.]/g, '');
-
       const parts = val.split('.');
       if (parts.length > 2) {
         val = parts[0] + '.' + parts.slice(1).join('');
       }
-
       if (isNegative) {
         val = '-' + val;
       }
-
       input.value = val;
       updateLiveAvg(type);
     }
@@ -356,9 +474,8 @@
       document.getElementById(`${type}Calc`).textContent = `本次即時平均：${avgText}`;
     }
 
-    // 🚀 優化一：快取優先 + 背景同步 (0 秒加載體驗)
+    // 快取優先 + 背景同步
     function loadData() {
-      // 1. 先讀取快取
       const cached = localStorage.getItem("point_sheet_data");
       if (cached) {
         try {
@@ -369,22 +486,21 @@
         }
       }
 
-      // 2. 背景請求 GAS 最新資料
       fetch(GAS_URL)
         .then(res => res.json())
         .then(rows => {
           allData = rows;
           localStorage.setItem("point_sheet_data", JSON.stringify(rows));
-          renderPointData(); // 自動背景刷新
+          renderPointData();
         })
         .catch(err => console.error("背景同步失敗:", err));
     }
 
-    // 時間格式化工具：例如轉換成 "09/30 15:30"
+    // 時間格式化工具
     function formatDate(timeStr) {
       if (!timeStr || timeStr === "--") return "--";
       const d = new Date(timeStr);
-      if (isNaN(d.getTime())) return timeStr; // 如果無法解析則原樣顯示
+      if (isNaN(d.getTime())) return timeStr;
 
       const month = String(d.getMonth() + 1).padStart(2, '0');
       const date = String(d.getDate()).padStart(2, '0');
@@ -394,7 +510,7 @@
       return `${month}/${date} ${hours}:${minutes}`;
     }
 
-    // 渲染資料 (包含上次時間)
+    // 渲染卡片頁面
     function renderPointData() {
       const pointRecords = allData.filter(row => String(row[1]).trim() === currentPoint);
 
@@ -405,27 +521,22 @@
         return;
       }
 
-      // 1. 第一筆記錄 (原始數據：C, D, E 欄)
       const first = pointRecords[0];
       setVal("eOrig", first[2] || "--");
       setVal("nOrig", first[3] || "--");
       setVal("elOrig", first[4] || "--");
 
-      // 2. 最後一筆記錄 (上次數據：A 欄時間, C~E 欄平均, F~K 欄細節)
       const last = pointRecords[pointRecords.length - 1];
       const formattedTime = formatDate(last[0]);
 
-      // E 數據
       setVal("eLastTime", formattedTime);
       setVal("eLastAvg", last[2] || "--");
       setVal("eLastDetails", `正:${last[5] || '--'} / 倒:${last[6] || '--'}`);
       
-      // N 數據
       setVal("nLastTime", formattedTime);
       setVal("nLastAvg", last[3] || "--");
       setVal("nLastDetails", `正:${last[7] || '--'} / 倒:${last[8] || '--'}`);
       
-      // EL 數據
       setVal("elLastTime", formattedTime);
       setVal("elLastAvg", last[4] || "--");
       setVal("elLastDetails", `正:${last[9] || '--'} / 倒:${last[10] || '--'}`);
@@ -435,7 +546,7 @@
       document.getElementById(id).textContent = text; 
     }
 
-    // 🚀 優化三：樂觀更新 (按下儲存 0 秒反饋)
+    // 樂觀更新 (0 秒上傳體驗)
     function submitData() {
       const eDirect = document.getElementById("eDirect").value;
       const eReverse = document.getElementById("eReverse").value;
@@ -444,7 +555,6 @@
       const elDirect = document.getElementById("elDirect").value;
       const elReverse = document.getElementById("elReverse").value;
 
-      // 輔助計算平均
       const calcAvg = (d, r) => {
         let numD = parseFloat(d), numR = parseFloat(r);
         if (!isNaN(numD) && !isNaN(numR)) return ((numD + numR) / 2).toFixed(4);
@@ -455,7 +565,6 @@
 
       const now = new Date().toISOString();
 
-      // 本地樂觀更新資料結構
       const newRow = [
         now,
         currentPoint,
@@ -465,15 +574,12 @@
         eDirect, eReverse, nDirect, nReverse, elDirect, elReverse
       ];
 
-      // 1. 立刻在前端更新 & 寫入本地快取
       allData.push(newRow);
       localStorage.setItem("point_sheet_data", JSON.stringify(allData));
       
-      // 2. 立刻渲染畫面並清空輸入框
       renderPointData();
       clearInputs();
 
-      // 3. 背景靜默傳送至 GAS 後端
       const btn = document.getElementById("submitBtn");
       btn.disabled = true;
       btn.textContent = "傳送中...";
@@ -489,9 +595,6 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       })
-      .then(() => {
-        // 背景成功上傳
-      })
       .catch(err => console.error("靜默上傳失敗:", err))
       .finally(() => {
         btn.disabled = false;
@@ -499,7 +602,6 @@
       });
     }
 
-    // 清空輸入框
     function clearInputs() {
       ["eDirect","eReverse","nDirect","nReverse","elDirect","elReverse"].forEach(id => {
         document.getElementById(id).value = "";
@@ -507,6 +609,139 @@
       ["eCalc","nCalc","elCalc"].forEach(id => {
         document.getElementById(id).textContent = "本次即時平均：--";
       });
+    }
+
+    // ==========================================
+    // 📊 今日紀錄數據總覽 (B01-B12) 彈出視窗邏輯
+    // ==========================================
+
+    function openTodayModal() {
+      document.getElementById("todayModal").style.display = "flex";
+      renderTodaySummary();
+    }
+
+    function closeTodayModal() {
+      document.getElementById("todayModal").style.display = "none";
+    }
+
+    // 計算偏差差值 (帶正負號與樣式)
+    function calcDiffHTML(valCurr, valRef) {
+      const numC = parseFloat(valCurr);
+      const numR = parseFloat(valRef);
+
+      if (isNaN(numC) || isNaN(numR)) return "<td>--</td>";
+
+      const diff = numC - numR;
+      const diffStr = (diff >= 0 ? "+" : "") + diff.toFixed(4);
+
+      if (Math.abs(diff) < 0.00001) {
+        return `<td class="diff-zero">0.0000</td>`;
+      } else if (diff > 0) {
+        return `<td class="diff-pos">${diffStr}</td>`;
+      } else {
+        return `<td class="diff-neg">${diffStr}</td>`;
+      }
+    }
+
+    function renderTodaySummary() {
+      const container = document.getElementById("todayModalBody");
+      container.innerHTML = "";
+
+      const todayStr = new Date().toDateString(); // 取得今天 Date 字串
+
+      for (let i = 1; i <= 12; i++) {
+        const pId = "B" + String(i).padStart(2, '0');
+        const pointRecords = allData.filter(row => String(row[1]).trim() === pId);
+
+        if (pointRecords.length === 0) continue;
+
+        // 原始數據 (第一筆)
+        const origRow = pointRecords[0];
+
+        // 篩選出「今天」的記錄
+        const todayRecords = pointRecords.filter(row => {
+          const d = new Date(row[0]);
+          return !isNaN(d.getTime()) && d.toDateString() === todayStr;
+        });
+
+        // 如果今天完全沒有數據
+        if (todayRecords.length === 0) {
+          container.innerHTML += `
+            <div class="today-card">
+              <div class="today-card-title">
+                <span>點位：${pId}</span>
+                <span style="color:#999; font-size:12px;">今日無紀錄</span>
+              </div>
+            </div>
+          `;
+          continue;
+        }
+
+        // 今日最新一筆數據
+        const todayLastRow = todayRecords[todayRecords.length - 1];
+        const todayTime = formatDate(todayLastRow[0]);
+
+        // 尋找「今日之前」的最新數據 (作為上次值)
+        const previousRecords = pointRecords.filter(row => {
+          const d = new Date(row[0]);
+          return !isNaN(d.getTime()) && d.toDateString() !== todayStr && d < new Date(todayLastRow[0]);
+        });
+        const lastRow = previousRecords.length > 0 ? previousRecords[previousRecords.length - 1] : null;
+
+        // 產生表格 HTML
+        let tableHTML = `
+          <div class="today-card">
+            <div class="today-card-title">
+              <span>點位：${pId}</span>
+              <span class="today-time">今日時間：${todayTime}</span>
+            </div>
+            <table class="today-table">
+              <thead>
+                <tr>
+                  <th>項目</th>
+                  <th>今日平均</th>
+                  <th>原始值</th>
+                  <th>$\Delta$ 原始</th>
+                  <th>上次值</th>
+                  <th>$\Delta$ 上次</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><b>E</b></td>
+                  <td>${todayLastRow[2] || '--'}</td>
+                  <td>${origRow[2] || '--'}</td>
+                  ${calcDiffHTML(todayLastRow[2], origRow[2])}
+                  <td>${lastRow ? (lastRow[2] || '--') : '--'}</td>
+                  ${lastRow ? calcDiffHTML(todayLastRow[2], lastRow[2]) : '<td>--</td>'}
+                </tr>
+                <tr>
+                  <td><b>N</b></td>
+                  <td>${todayLastRow[3] || '--'}</td>
+                  <td>${origRow[3] || '--'}</td>
+                  ${calcDiffHTML(todayLastRow[3], origRow[3])}
+                  <td>${lastRow ? (lastRow[3] || '--') : '--'}</td>
+                  ${lastRow ? calcDiffHTML(todayLastRow[3], lastRow[3]) : '<td>--</td>'}
+                </tr>
+                <tr>
+                  <td><b>EL</b></td>
+                  <td>${todayLastRow[4] || '--'}</td>
+                  <td>${origRow[4] || '--'}</td>
+                  ${calcDiffHTML(todayLastRow[4], origRow[4])}
+                  <td>${lastRow ? (lastRow[4] || '--') : '--'}</td>
+                  ${lastRow ? calcDiffHTML(todayLastRow[4], lastRow[4]) : '<td>--</td>'}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `;
+
+        container.innerHTML += tableHTML;
+      }
+
+      if (container.innerHTML === "") {
+        container.innerHTML = `<div style="text-align:center; padding:20px; color:#666;">目前試算表無任何數據</div>`;
+      }
     }
 
     window.onload = () => {
