@@ -88,7 +88,7 @@
     .data-val { font-weight: bold; color: #222; text-align: right; }
     .data-val.time-val { color: #28a745; }
 
-    /* 數據修正按鈕 / 即時平均框 */
+    /* 下方數據修正 / 即時平均 顯示框 */
     .calc-box { 
       background: #eef6ff; 
       border: 1px dashed #007bff; 
@@ -100,9 +100,20 @@
       color: #0056b3; 
       font-weight: bold; 
       width: 100%;
+      user-select: none;
+    }
+
+    .calc-box.clickable {
       cursor: pointer;
     }
-    .calc-box.editable {
+
+    .calc-box.locked-mode {
+      background: #f8f9fa;
+      border-color: #6c757d;
+      color: #495057;
+    }
+
+    .calc-box.editing-mode {
       background: #fff3cd;
       border-color: #ffc107;
       color: #856404;
@@ -173,6 +184,7 @@
       justify-content: center;
       flex-shrink: 0;
     }
+
     .btn-toggle-sign:disabled {
       background: #e9ecef;
       color: #adb5bd;
@@ -205,7 +217,7 @@
       cursor: pointer;
     }
 
-    /* 今日數據 Modal 彈出視窗樣式 */
+    /* 今日數據 Modal 彈出視窗樣式 (已優化防超出頁面) */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -215,15 +227,16 @@
       z-index: 1000;
       justify-content: center;
       align-items: center;
+      padding: 8px;
     }
 
     .modal-content {
       background: white;
-      width: 95%;
-      max-width: 600px;
-      max-height: 90vh;
+      width: 100%;
+      max-width: 650px;
+      max-height: 92vh;
       border-radius: 10px;
-      padding: 16px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
       box-shadow: 0 4px 12px rgba(0,0,0,0.2);
@@ -234,12 +247,12 @@
       justify-content: space-between;
       align-items: center;
       border-bottom: 2px solid #007bff;
-      padding-bottom: 10px;
-      margin-bottom: 12px;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
     }
 
     .modal-title {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: bold;
       color: #007bff;
     }
@@ -248,8 +261,8 @@
       background: #dc3545;
       color: white;
       border: none;
-      padding: 6px 12px;
-      font-size: 14px;
+      padding: 5px 10px;
+      font-size: 13px;
       border-radius: 4px;
       cursor: pointer;
       font-weight: bold;
@@ -258,47 +271,63 @@
     .modal-body {
       overflow-y: auto;
       flex: 1;
+      padding-right: 2px;
     }
 
     .today-card {
       background: #f8f9fa;
       border: 1px solid #dee2e6;
       border-radius: 6px;
-      padding: 10px;
+      padding: 8px;
       margin-bottom: 10px;
+      width: 100%;
     }
 
     .today-card-title {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: bold;
       color: #333;
       margin-bottom: 6px;
       display: flex;
       justify-content: space-between;
+      align-items: center;
     }
 
     .today-time {
-      font-size: 12px;
+      font-size: 11px;
       color: #28a745;
       font-weight: normal;
     }
 
+    /* 固定寬度與排版的表格樣式 */
     .today-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 12px;
+      font-size: 11px;
+      table-layout: fixed; /* 🔥 強制固定欄寬，不隨字元數改變 */
     }
 
     .today-table th, .today-table td {
       border: 1px solid #ced4da;
-      padding: 6px 4px;
+      padding: 5px 2px;
       text-align: center;
+      word-break: break-all; /* 防止長數字破壞寬度 */
+      overflow: hidden;
     }
 
     .today-table th {
       background: #e9ecef;
       color: #495057;
+      font-weight: bold;
     }
+
+    /* 各欄位固定寬度分配 */
+    .col-item { width: 12%; }
+    .col-avg  { width: 18%; }
+    .col-orig { width: 17%; }
+    .col-dorig{ width: 18%; }
+    .col-last { width: 17%; }
+    .col-dlast{ width: 18%; }
 
     .diff-pos { color: #d9534f; font-weight: bold; }
     .diff-neg { color: #0275d8; font-weight: bold; }
@@ -325,19 +354,19 @@
       <div class="input-field">
         <label>正鏡</label>
         <div class="input-wrapper">
-          <input type="text" id="eDirect" inputmode="decimal" placeholder="0.0" disabled oninput="handleInput(this, 'e')">
-          <button type="button" class="btn-toggle-sign" id="eBtnSign" disabled onclick="toggleSign('eDirect', 'e')">±</button>
+          <input type="text" id="eDirect" inputmode="decimal" placeholder="0.0" oninput="handleInput(this, 'e')">
+          <button type="button" class="btn-toggle-sign" id="eBtnSign" onclick="toggleSign('eDirect', 'e')">±</button>
         </div>
       </div>
       <div class="input-field">
         <label>倒鏡</label>
         <div class="input-wrapper">
-          <input type="text" id="eReverse" inputmode="decimal" placeholder="0.0" disabled oninput="handleInput(this, 'e')">
-          <button type="button" class="btn-toggle-sign" id="eRevBtnSign" disabled onclick="toggleSign('eReverse', 'e')">±</button>
+          <input type="text" id="eReverse" inputmode="decimal" placeholder="0.0" oninput="handleInput(this, 'e')">
+          <button type="button" class="btn-toggle-sign" id="eRevBtnSign" onclick="toggleSign('eReverse', 'e')">±</button>
         </div>
       </div>
     </div>
-    <div class="calc-box" id="eCalc" onclick="toggleEditMode('e')">🔒 數據修正 (點擊解鎖) | 本次平均：--</div>
+    <div class="calc-box" id="eCalc" onclick="handleCalcBoxClick('e')">本次即時平均：--</div>
   </div>
 
   <!-- N 數據卡片 -->
@@ -352,19 +381,19 @@
       <div class="input-field">
         <label>正鏡</label>
         <div class="input-wrapper">
-          <input type="text" id="nDirect" inputmode="decimal" placeholder="0.0" disabled oninput="handleInput(this, 'n')">
-          <button type="button" class="btn-toggle-sign" id="nBtnSign" disabled onclick="toggleSign('nDirect', 'n')">±</button>
+          <input type="text" id="nDirect" inputmode="decimal" placeholder="0.0" oninput="handleInput(this, 'n')">
+          <button type="button" class="btn-toggle-sign" id="nBtnSign" onclick="toggleSign('nDirect', 'n')">±</button>
         </div>
       </div>
       <div class="input-field">
         <label>倒鏡</label>
         <div class="input-wrapper">
-          <input type="text" id="nReverse" inputmode="decimal" placeholder="0.0" disabled oninput="handleInput(this, 'n')">
-          <button type="button" class="btn-toggle-sign" id="nRevBtnSign" disabled onclick="toggleSign('nReverse', 'n')">±</button>
+          <input type="text" id="nReverse" inputmode="decimal" placeholder="0.0" oninput="handleInput(this, 'n')">
+          <button type="button" class="btn-toggle-sign" id="nRevBtnSign" onclick="toggleSign('nReverse', 'n')">±</button>
         </div>
       </div>
     </div>
-    <div class="calc-box" id="nCalc" onclick="toggleEditMode('n')">🔒 數據修正 (點擊解鎖) | 本次平均：--</div>
+    <div class="calc-box" id="nCalc" onclick="handleCalcBoxClick('n')">本次即時平均：--</div>
   </div>
 
   <!-- EL 數據卡片 -->
@@ -379,19 +408,19 @@
       <div class="input-field">
         <label>正鏡</label>
         <div class="input-wrapper">
-          <input type="text" id="elDirect" inputmode="decimal" placeholder="0.0" disabled oninput="handleInput(this, 'el')">
-          <button type="button" class="btn-toggle-sign" id="elBtnSign" disabled onclick="toggleSign('elDirect', 'el')">±</button>
+          <input type="text" id="elDirect" inputmode="decimal" placeholder="0.0" oninput="handleInput(this, 'el')">
+          <button type="button" class="btn-toggle-sign" id="elBtnSign" onclick="toggleSign('elDirect', 'el')">±</button>
         </div>
       </div>
       <div class="input-field">
         <label>倒鏡</label>
         <div class="input-wrapper">
-          <input type="text" id="elReverse" inputmode="decimal" placeholder="0.0" disabled oninput="handleInput(this, 'el')">
-          <button type="button" class="btn-toggle-sign" id="elRevBtnSign" disabled onclick="toggleSign('elReverse', 'el')">±</button>
+          <input type="text" id="elReverse" inputmode="decimal" placeholder="0.0" oninput="handleInput(this, 'el')">
+          <button type="button" class="btn-toggle-sign" id="elRevBtnSign" onclick="toggleSign('elReverse', 'el')">±</button>
         </div>
       </div>
     </div>
-    <div class="calc-box" id="elCalc" onclick="toggleEditMode('el')">🔒 數據修正 (點擊解鎖) | 本次平均：--</div>
+    <div class="calc-box" id="elCalc" onclick="handleCalcBoxClick('el')">本次即時平均：--</div>
   </div>
 
   <button class="btn-submit" id="submitBtn" onclick="submitData()">儲存並傳送紀錄</button>
@@ -417,8 +446,12 @@
     let currentPoint = "B01";
     let allData = [];
     
-    // 紀錄各欄位是否處於解鎖可修改狀態
-    let editStates = { e: false, n: false, el: false };
+    // 紀錄各欄位狀態：hasEnteredToday (今天是否輸入過), isUnlocked (解鎖修正狀態)
+    let itemStates = {
+      e: { hasEnteredToday: false, isUnlocked: false },
+      n: { hasEnteredToday: false, isUnlocked: false },
+      el: { hasEnteredToday: false, isUnlocked: false }
+    };
 
     function initButtons() {
       const grid = document.getElementById("pointButtons");
@@ -439,14 +472,12 @@
       });
       document.getElementById("currentPointTitle").textContent = `目前點位：${pId}`;
       
-      // 切換點位時，預設將各項重設為鎖定狀態
-      editStates = { e: false, n: false, el: false };
-      
       renderPointData();
     }
 
     function toggleSign(inputId, type) {
-      if (!editStates[type]) return; // 若未解鎖則不動作
+      if (itemStates[type].hasEnteredToday && !itemStates[type].isUnlocked) return;
+      
       const input = document.getElementById(inputId);
       let val = input.value.trim();
       if (!val) return;
@@ -455,11 +486,12 @@
       } else {
         input.value = '-' + val;
       }
-      updateLiveAvg(type);
+      updateUI(type);
     }
 
     function handleInput(input, type) {
-      if (!editStates[type]) return;
+      if (itemStates[type].hasEnteredToday && !itemStates[type].isUnlocked) return;
+      
       let val = input.value;
       const isNegative = val.startsWith('-');
       val = val.replace(/[^0-9.]/g, '');
@@ -471,51 +503,68 @@
         val = '-' + val;
       }
       input.value = val;
-      updateLiveAvg(type);
+      updateUI(type);
     }
 
-    function updateLiveAvg(type) {
-      const dVal = parseFloat(document.getElementById(`${type}Direct`).value);
-      const rVal = parseFloat(document.getElementById(`${type}Reverse`).value);
+    function handleCalcBoxClick(type) {
+      if (!itemStates[type].hasEnteredToday) return;
 
-      const hasD = !isNaN(dVal);
-      const hasR = !isNaN(rVal);
-
-      let avgText = "--";
-      if (hasD && hasR) {
-        avgText = ((dVal + rVal) / 2).toFixed(4);
-      } else if (hasD) {
-        avgText = dVal.toFixed(4);
-      } else if (hasR) {
-        avgText = rVal.toFixed(4);
-      }
-
-      const box = document.getElementById(`${type}Calc`);
-      if (editStates[type]) {
-        box.innerHTML = `🔓 點擊重新鎖定 | 本次平均：${avgText}`;
-      } else {
-        box.innerHTML = `🔒 數據修正 (點擊解鎖) | 本次平均：${avgText}`;
-      }
+      itemStates[type].isUnlocked = !itemStates[type].isUnlocked;
+      updateUI(type);
     }
 
-    // 點擊「數據修正」方塊來解鎖/上鎖
-    function toggleEditMode(type) {
-      editStates[type] = !editStates[type];
-      const isEditable = editStates[type];
-
+    function updateUI(type) {
+      const state = itemStates[type];
       const directInput = document.getElementById(`${type}Direct`);
       const reverseInput = document.getElementById(`${type}Reverse`);
       const btnSign1 = document.getElementById(`${type}BtnSign`);
       const btnSign2 = document.getElementById(`${type}RevBtnSign`);
-      const box = document.getElementById(`${type}Calc`);
+      const calcBox = document.getElementById(`${type}Calc`);
 
-      directInput.disabled = !isEditable;
-      reverseInput.disabled = !isEditable;
-      btnSign1.disabled = !isEditable;
-      btnSign2.disabled = !isEditable;
+      if (state.hasEnteredToday) {
+        calcBox.classList.add("clickable");
 
-      box.classList.toggle("editable", isEditable);
-      updateLiveAvg(type);
+        if (state.isUnlocked) {
+          directInput.disabled = false;
+          reverseInput.disabled = false;
+          btnSign1.disabled = false;
+          btnSign2.disabled = false;
+
+          calcBox.className = "calc-box clickable editing-mode";
+          calcBox.textContent = "🔓 數據修正 (點擊上鎖)";
+        } else {
+          directInput.disabled = true;
+          reverseInput.disabled = true;
+          btnSign1.disabled = true;
+          btnSign2.disabled = true;
+
+          calcBox.className = "calc-box clickable locked-mode";
+          calcBox.textContent = "🔒 數據修正 (點擊解鎖)";
+        }
+      } else {
+        directInput.disabled = false;
+        reverseInput.disabled = false;
+        btnSign1.disabled = false;
+        btnSign2.disabled = false;
+
+        calcBox.className = "calc-box";
+        
+        const dVal = parseFloat(directInput.value);
+        const rVal = parseFloat(reverseInput.value);
+        const hasD = !isNaN(dVal);
+        const hasR = !isNaN(rVal);
+
+        let avgText = "--";
+        if (hasD && hasR) {
+          avgText = ((dVal + rVal) / 2).toFixed(4);
+        } else if (hasD) {
+          avgText = dVal.toFixed(4);
+        } else if (hasR) {
+          avgText = rVal.toFixed(4);
+        }
+
+        calcBox.textContent = `本次即時平均：${avgText}`;
+      }
     }
 
     function loadData() {
@@ -552,12 +601,10 @@
       return `${month}/${date} ${hours}:${minutes}`;
     }
 
-    // 渲染卡片與「偵測今天是否已輸入過」
     function renderPointData() {
       const pointRecords = allData.filter(row => String(row[1]).trim() === currentPoint);
       const todayStr = new Date().toDateString();
 
-      // 檢查今天是否有輸入過紀錄
       const todayRecords = pointRecords.filter(row => {
         const d = new Date(row[0]);
         return !isNaN(d.getTime()) && d.toDateString() === todayStr;
@@ -568,8 +615,9 @@
         setVal("nOrig", "--"); setVal("nLastTime", "--"); setVal("nLastAvg", "--"); setVal("nLastDetails", "--");
         setVal("elOrig", "--"); setVal("elLastTime", "--"); setVal("elLastAvg", "--"); setVal("elLastDetails", "--");
         
-        // 若完全沒資料，預設解鎖讓使用者輸入
-        unlockByDefault();
+        setupNewInput('e');
+        setupNewInput('n');
+        setupNewInput('el');
         return;
       }
 
@@ -593,51 +641,41 @@
       setVal("elLastAvg", last[4] || "--");
       setVal("elLastDetails", `正:${last[9] || '--'} / 倒:${last[10] || '--'}`);
 
-      // 🔥 關鍵邏輯：若「今天」已經輸入過，自動代入數值並鎖定灰階；若無則解鎖
       if (todayRecords.length > 0) {
         const todayLast = todayRecords[todayRecords.length - 1];
         
-        // 代入 E
-        setInputValueAndLock('e', todayLast[5], todayLast[6], todayLast[2]);
-        // 代入 N
-        setInputValueAndLock('n', todayLast[7], todayLast[8], todayLast[3]);
-        // 代入 EL
-        setInputValueAndLock('el', todayLast[9], todayLast[10], todayLast[4]);
+        setupTodayEntered('e', todayLast[5], todayLast[6]);
+        setupTodayEntered('n', todayLast[7], todayLast[8]);
+        setupTodayEntered('el', todayLast[9], todayLast[10]);
       } else {
-        unlockByDefault();
+        setupNewInput('e');
+        setupNewInput('n');
+        setupNewInput('el');
       }
     }
 
-    function setInputValueAndLock(type, directVal, reverseVal, avgVal) {
+    function setupTodayEntered(type, directVal, reverseVal) {
       document.getElementById(`${type}Direct`).value = directVal || "";
       document.getElementById(`${type}Reverse`).value = reverseVal || "";
       
-      editStates[type] = false; // 鎖定
-      document.getElementById(`${type}Direct`).disabled = true;
-      document.getElementById(`${type}Reverse`).disabled = true;
-      document.getElementById(`${type}BtnSign`).disabled = true;
-      document.getElementById(`${type}RevBtnSign`).disabled = true;
-
-      const box = document.getElementById(`${type}Calc`);
-      box.classList.remove("editable");
-      box.innerHTML = `🔒 數據修正 (點擊解鎖) | 今日已輸入 (平均：${avgVal || '--'})`;
+      itemStates[type] = {
+        hasEnteredToday: true,
+        isUnlocked: false
+      };
+      
+      updateUI(type);
     }
 
-    function unlockByDefault() {
-      ['e', 'n', 'el'].forEach(type => {
-        document.getElementById(`${type}Direct`).value = "";
-        document.getElementById(`${type}Reverse`).value = "";
-        
-        editStates[type] = true; // 預設解鎖讓使用者新輸入
-        document.getElementById(`${type}Direct`).disabled = false;
-        document.getElementById(`${type}Reverse`).disabled = false;
-        document.getElementById(`${type}BtnSign`).disabled = false;
-        document.getElementById(`${type}RevBtnSign`).disabled = false;
-
-        const box = document.getElementById(`${type}Calc`);
-        box.classList.add("editable");
-        box.innerHTML = `🔓 點擊重新鎖定 | 本次平均：--`;
-      });
+    function setupNewInput(type) {
+      document.getElementById(`${type}Direct`).value = "";
+      document.getElementById(`${type}Reverse`).value = "";
+      
+      itemStates[type] = {
+        hasEnteredToday: false,
+        isUnlocked: false
+      };
+      
+      updateUI(type);
     }
 
     function setVal(id, text) { 
@@ -778,12 +816,12 @@
             <table class="today-table">
               <thead>
                 <tr>
-                  <th>項目</th>
-                  <th>今日平均</th>
-                  <th>原始值</th>
-                  <th>Δ 原始</th>
-                  <th>上次值</th>
-                  <th>Δ 上次</th>
+                  <th class="col-item">項目</th>
+                  <th class="col-avg">今日平均</th>
+                  <th class="col-orig">原始值</th>
+                  <th class="col-dorig">Δ 原始</th>
+                  <th class="col-last">上次值</th>
+                  <th class="col-dlast">Δ 上次</th>
                 </tr>
               </thead>
               <tbody>
