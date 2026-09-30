@@ -5,29 +5,149 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>點位數據紀錄系統</title>
   <style>
-    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: #f4f6f8; margin: 0; padding: 10px 15px 30px 15px; }
+    /* 全局重置邊距與邊框計算模式，避免擠爆邊界 */
+    *, *::before, *::after { 
+      box-sizing: border-box; 
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+    }
     
-    /* 12個按鈕網格 */
-    .btn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
-    .btn-point { padding: 12px 0; font-size: 16px; font-weight: bold; background: white; border: 1px solid #ccc; border-radius: 6px; color: #333; }
-    .btn-point.active { background-color: #007bff; color: white; border-color: #007bff; }
-    
-    /* 卡片與欄位 */
-    .card { background: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 15px; }
-    .card-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #007bff; }
-    
-    .data-row { display: flex; justify-content: space-between; background: #f8f9fa; padding: 8px; border-radius: 4px; margin-bottom: 10px; font-size: 14px; }
-    .data-label { color: #666; }
-    .data-val { font-weight: bold; color: #222; }
+    /* 防範手機畫面產生左右滑動的橫向滾動條 */
+    html, body {
+      width: 100%;
+      overflow-x: hidden;
+      background-color: #f4f6f8;
+    }
 
-    .input-group { display: flex; gap: 8px; margin-top: 8px; }
-    .input-field { flex: 1; display: flex; flex-direction: column; }
-    .input-field label { font-size: 12px; color: #555; margin-bottom: 4px; }
-    .input-field input { padding: 12px; font-size: 18px; border: 1px solid #ccc; border-radius: 4px; text-align: center; background: #fff; }
-    .input-field input:focus { border-color: #007bff; outline: none; background: #eef6ff; }
+    body { 
+      padding: 12px 10px 30px 10px; 
+    }
+    
+    /* 點位選擇按鈕 4 欄網格 */
+    .btn-grid { 
+      display: grid; 
+      grid-template-columns: repeat(4, 1fr); 
+      gap: 6px; 
+      margin-bottom: 12px; 
+      width: 100%;
+    }
+    
+    .btn-point { 
+      padding: 10px 0; 
+      font-size: 15px; 
+      font-weight: bold; 
+      background: white; 
+      border: 1px solid #ccc; 
+      border-radius: 6px; 
+      color: #333; 
+      width: 100%;
+      text-align: center;
+      cursor: pointer;
+    }
+    
+    .btn-point.active { 
+      background-color: #007bff; 
+      color: white; 
+      border-color: #007bff; 
+    }
+    
+    /* 卡片與數據列 */
+    .card { 
+      background: white; 
+      border-radius: 8px; 
+      padding: 12px; 
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+      margin-bottom: 12px; 
+      width: 100%;
+    }
 
-    .btn-submit { width: 100%; padding: 14px; font-size: 18px; font-weight: bold; background: #28a745; color: white; border: none; border-radius: 6px; margin-top: 10px; }
+    .card-title { 
+      font-size: 17px; 
+      font-weight: bold; 
+      margin-bottom: 8px; 
+      color: #007bff; 
+    }
+    
+    .data-row { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+      background: #f8f9fa; 
+      padding: 8px 10px; 
+      border-radius: 4px; 
+      margin-bottom: 6px; 
+      font-size: 13px; 
+      word-break: break-all;
+    }
+
+    .data-label { color: #666; flex-shrink: 0; }
+    .data-val { font-weight: bold; color: #222; text-align: right; }
+
+    /* 即時平均計算框 */
+    .calc-box { 
+      background: #eef6ff; 
+      border: 1px dashed #007bff; 
+      padding: 8px; 
+      border-radius: 4px; 
+      margin-top: 8px; 
+      font-size: 14px; 
+      text-align: center; 
+      color: #0056b3; 
+      font-weight: bold; 
+      width: 100%;
+    }
+
+    /* 輸入框雙欄排版（加強防溢出） */
+    .input-group { 
+      display: flex; 
+      gap: 8px; 
+      margin-top: 8px; 
+      width: 100%;
+    }
+
+    .input-field { 
+      flex: 1; 
+      min-width: 0; /* 關鍵：防止多餘內容把 input 框撐破容器 */
+      display: flex; 
+      flex-direction: column; 
+    }
+
+    .input-field label { 
+      font-size: 12px; 
+      color: #555; 
+      margin-bottom: 4px; 
+    }
+
+    .input-field input { 
+      width: 100%;
+      padding: 10px 4px; 
+      font-size: 17px; 
+      border: 1px solid #ccc; 
+      border-radius: 4px; 
+      text-align: center; 
+      background: #fff; 
+      -webkit-appearance: none; /* 移除 iOS Safari 內建強加的陰影樣式 */
+    }
+
+    .input-field input:focus { 
+      border-color: #007bff; 
+      outline: none; 
+      background: #fff; 
+    }
+
+    .btn-submit { 
+      width: 100%; 
+      padding: 14px; 
+      font-size: 18px; 
+      font-weight: bold; 
+      background: #28a745; 
+      color: white; 
+      border: none; 
+      border-radius: 6px; 
+      margin-top: 10px; 
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -35,52 +155,61 @@
   <!-- 點位選擇按鈕 B01-B12 -->
   <div class="btn-grid" id="pointButtons"></div>
 
-  <!-- 目前選擇點位提示 -->
+  <!-- 目前選擇點位標題 -->
   <div class="card-title" id="currentPointTitle" style="text-align: center;">請選擇點位</div>
 
   <!-- E 數據卡片 -->
   <div class="card">
     <div class="card-title">E 數據</div>
-    <div class="data-row"><span class="data-label">上次數據:</span> <span class="data-val" id="eLast">--</span></div>
-    <div class="data-row"><span class="data-label">原始數據:</span> <span class="data-val" id="eOrig">--</span></div>
+    <div class="data-row"><span class="data-label">原始 E 數據:</span> <span class="data-val" id="eOrig">--</span></div>
+    <div class="data-row"><span class="data-label">上次 E 數據 (平均):</span> <span class="data-val" id="eLastAvg">--</span></div>
+    <div class="data-row"><span class="data-label">上次正/倒鏡:</span> <span class="data-val" id="eLastDetails">--</span></div>
+    
     <div class="input-group">
-      <div class="input-field"><label>正鏡</label><input type="text" id="eDirect" inputmode="decimal" pattern="[0-9.]*" placeholder="0.0" oninput="filterInput(this)"></div>
-      <div class="input-field"><label>倒鏡</label><input type="text" id="eReverse" inputmode="decimal" pattern="[0-9.]*" placeholder="0.0" oninput="filterInput(this)"></div>
+      <div class="input-field"><label>正鏡</label><input type="text" id="eDirect" inputmode="decimal" pattern="[0-9.]*" placeholder="0.0" oninput="handleInput(this, 'e')"></div>
+      <div class="input-field"><label>倒鏡</label><input type="text" id="eReverse" inputmode="decimal" pattern="[0-9.]*" placeholder="0.0" oninput="handleInput(this, 'e')"></div>
     </div>
+    <div class="calc-box" id="eCalc">本次即時平均：--</div>
   </div>
 
   <!-- N 數據卡片 -->
   <div class="card">
     <div class="card-title">N 數據</div>
-    <div class="data-row"><span class="data-label">上次數據:</span> <span class="data-val" id="nLast">--</span></div>
-    <div class="data-row"><span class="data-label">原始數據:</span> <span class="data-val" id="nOrig">--</span></div>
+    <div class="data-row"><span class="data-label">原始 N 數據:</span> <span class="data-val" id="nOrig">--</span></div>
+    <div class="data-row"><span class="data-label">上次 N 數據 (平均):</span> <span class="data-val" id="nLastAvg">--</span></div>
+    <div class="data-row"><span class="data-label">上次正/倒鏡:</span> <span class="data-val" id="nLastDetails">--</span></div>
+    
     <div class="input-group">
-      <div class="input-field"><label>正鏡</label><input type="text" id="nDirect" inputmode="decimal" pattern="[0-9.]*" placeholder="0.0" oninput="filterInput(this)"></div>
-      <div class="input-field"><label>倒鏡</label><input type="text" id="nReverse" inputmode="decimal" pattern="[0-9.]*" placeholder="0.0" oninput="filterInput(this)"></div>
+      <div class="input-field"><label>正鏡</label><input type="text" id="nDirect" inputmode="decimal" pattern="[0-9.]*" placeholder="0.0" oninput="handleInput(this, 'n')"></div>
+      <div class="input-field"><label>倒鏡</label><input type="text" id="nReverse" inputmode="decimal" pattern="[0-9.]*" placeholder="0.0" oninput="handleInput(this, 'n')"></div>
     </div>
+    <div class="calc-box" id="nCalc">本次即時平均：--</div>
   </div>
 
   <!-- EL 數據卡片 -->
   <div class="card">
     <div class="card-title">EL 數據</div>
-    <div class="data-row"><span class="data-label">上次數據:</span> <span class="data-val" id="elLast">--</span></div>
-    <div class="data-row"><span class="data-label">原始數據:</span> <span class="data-val" id="elOrig">--</span></div>
+    <div class="data-row"><span class="data-label">原始 EL 數據:</span> <span class="data-val" id="elOrig">--</span></div>
+    <div class="data-row"><span class="data-label">上次 EL 數據 (平均):</span> <span class="data-val" id="elLastAvg">--</span></div>
+    <div class="data-row"><span class="data-label">上次正/倒鏡:</span> <span class="data-val" id="elLastDetails">--</span></div>
+    
     <div class="input-group">
-      <div class="input-field"><label>正鏡</label><input type="text" id="elDirect" inputmode="decimal" pattern="[0-9.]*" placeholder="0.0" oninput="filterInput(this)"></div>
-      <div class="input-field"><label>倒鏡</label><input type="text" id="elReverse" inputmode="decimal" pattern="[0-9.]*" placeholder="0.0" oninput="filterInput(this)"></div>
+      <div class="input-field"><label>正鏡</label><input type="text" id="elDirect" inputmode="decimal" pattern="[0-9.]*" placeholder="0.0" oninput="handleInput(this, 'el')"></div>
+      <div class="input-field"><label>倒鏡</label><input type="text" id="elReverse" inputmode="decimal" pattern="[0-9.]*" placeholder="0.0" oninput="handleInput(this, 'el')"></div>
     </div>
+    <div class="calc-box" id="elCalc">本次即時平均：--</div>
   </div>
 
   <button class="btn-submit" id="submitBtn" onclick="submitData()">儲存並傳送紀錄</button>
 
   <script>
-    // ⚠️ 請替換為你的 Google Apps Script URL
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbz-Tqr4RAMYXP8u2sHKQm8FSkF_yYLXfuZwBGJdrahYDS8uBlLWvfQGuc4wR81dpEYn/exec";
+    // ⚠️ 請填入您 Apps Script 部署後的 Web App URL
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzQ7RZID1yqQGHjt79cvd42ZODIaC_9bTADlkFA3EbT1a_S916dRRRg2QarZUrpx18/exec";
 
     let currentPoint = "B01";
     let allData = [];
 
-    // 初始化建置 B01-B12 按鈕
+    // 初始化 B01-B12 按鈕
     function initButtons() {
       const grid = document.getElementById("pointButtons");
       for (let i = 1; i <= 12; i++) {
@@ -104,21 +233,38 @@
       renderPointData();
     }
 
-    // 限制輸入框只允許 0-9 與最多一個小數點
-    function filterInput(input) {
-      // 1. 先清除非數字與小數點的字元
+    // 過濾非數字字元 + 即時計算平均值
+    function handleInput(input, type) {
+      // 1. 強制只留 0-9 與最多一個小數點
       let val = input.value.replace(/[^0-9.]/g, '');
-      
-      // 2. 避免輸入多個小數點 (只保留第一個小數點)
       const parts = val.split('.');
-      if (parts.length > 2) {
-        val = parts[0] + '.' + parts.slice(1).join('');
-      }
-      
+      if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
       input.value = val;
+
+      // 2. 實時更新畫面上的即時平均值
+      updateLiveAvg(type);
     }
 
-    // 讀取試算表資料
+    function updateLiveAvg(type) {
+      const dVal = parseFloat(document.getElementById(`${type}Direct`).value);
+      const rVal = parseFloat(document.getElementById(`${type}Reverse`).value);
+
+      const hasD = !isNaN(dVal);
+      const hasR = !isNaN(rVal);
+
+      let avgText = "--";
+      if (hasD && hasR) {
+        avgText = ((dVal + rVal) / 2).toFixed(4);
+      } else if (hasD) {
+        avgText = dVal.toFixed(4);
+      } else if (hasR) {
+        avgText = rVal.toFixed(4);
+      }
+
+      document.getElementById(`${type}Calc`).textContent = `本次即時平均：${avgText}`;
+    }
+
+    // 從 Apps Script 讀取試算表全部數據
     function loadData() {
       fetch(GAS_URL)
         .then(res => res.json())
@@ -129,33 +275,45 @@
         .catch(err => console.error("讀取失敗", err));
     }
 
-    // 依據 A~K 欄順序讀取並顯示「原始數據」與「上次數據」
+    // 渲染當前點位的數據
     function renderPointData() {
+      // row[1] 為 B 欄位：點位編號
       const pointRecords = allData.filter(row => String(row[1]).trim() === currentPoint);
 
       if (pointRecords.length === 0) {
-        setVal("eOrig", "--"); setVal("eLast", "--");
-        setVal("nOrig", "--"); setVal("nLast", "--");
-        setVal("elOrig", "--"); setVal("elLast", "--");
+        setVal("eOrig", "--"); setVal("eLastAvg", "--"); setVal("eLastDetails", "--");
+        setVal("nOrig", "--"); setVal("nLastAvg", "--"); setVal("nLastDetails", "--");
+        setVal("elOrig", "--"); setVal("elLastAvg", "--"); setVal("elLastDetails", "--");
         return;
       }
 
-      // 第一筆紀錄 (原始數據) - F/G: E正/倒, H/I: N正/倒, J/K: EL正/倒
+      // 1. 第一筆紀錄 (原始數據)：對應 C, D, E 欄位 (row[2], row[3], row[4])
       const first = pointRecords[0];
-      setVal("eOrig", `正:${first[5] || '--'} / 倒:${first[6] || '--'}`);
-      setVal("nOrig", `正:${first[7] || '--'} / 倒:${first[8] || '--'}`);
-      setVal("elOrig", `正:${first[9] || '--'} / 倒:${first[10] || '--'}`);
+      setVal("eOrig", first[2] || "--");
+      setVal("nOrig", first[3] || "--");
+      setVal("elOrig", first[4] || "--");
 
-      // 最後一筆紀錄 (上次數據)
+      // 2. 最後一筆紀錄 (上次數據)：對應 C,D,E 平均值與 F~K 欄位的正倒鏡細節
       const last = pointRecords[pointRecords.length - 1];
-      setVal("eLast", `正:${last[5] || '--'} / 倒:${last[6] || '--'}`);
-      setVal("nLast", `正:${last[7] || '--'} / 倒:${last[8] || '--'}`);
-      setVal("elLast", `正:${last[9] || '--'} / 倒:${last[10] || '--'}`);
+      
+      // E 數據
+      setVal("eLastAvg", last[2] || "--");
+      setVal("eLastDetails", `正:${last[5] || '--'} / 倒:${last[6] || '--'}`);
+      
+      // N 數據
+      setVal("nLastAvg", last[3] || "--");
+      setVal("nLastDetails", `正:${last[7] || '--'} / 倒:${last[8] || '--'}`);
+      
+      // EL 數據
+      setVal("elLastAvg", last[4] || "--");
+      setVal("elLastDetails", `正:${last[9] || '--'} / 倒:${last[10] || '--'}`);
     }
 
-    function setVal(id, text) { document.getElementById(id).textContent = text; }
+    function setVal(id, text) { 
+      document.getElementById(id).textContent = text; 
+    }
 
-    // 送出資料
+    // 提交數據至 Apps Script
     function submitData() {
       const payload = {
         pointId: currentPoint,
@@ -180,18 +338,22 @@
       .then(() => {
         alert(`${currentPoint} 資料儲存成功！`);
         clearInputs();
-        loadData(); // 重新整理最新數據
+        loadData(); // 重新載入試算表最新數據
       })
-      .catch(err => alert("失敗：" + err))
+      .catch(err => alert("傳送失敗：" + err))
       .finally(() => {
         btn.disabled = false;
         btn.textContent = "儲存並傳送紀錄";
       });
     }
 
+    // 清空輸入框與計算區域
     function clearInputs() {
       ["eDirect","eReverse","nDirect","nReverse","elDirect","elReverse"].forEach(id => {
         document.getElementById(id).value = "";
+      });
+      ["eCalc","nCalc","elCalc"].forEach(id => {
+        document.getElementById(id).textContent = "本次即時平均：--";
       });
     }
 
