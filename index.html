@@ -2,44 +2,184 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>數字紀錄系統</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>點位數據紀錄系統</title>
   <style>
-    body { font-family: sans-serif; max-width: 500px; margin: 30px auto; padding: 0 15px; }
-    .card { border: 1px solid #ddd; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    input, button { width: 100%; padding: 10px; margin-top: 10px; box-sizing: border-box; border-radius: 4px; }
-    input { border: 1px solid #ccc; }
-    button { background-color: #007bff; color: white; border: none; cursor: pointer; font-size: 16px; }
-    button:hover { background-color: #0056b3; }
-    ul { list-style: none; padding: 0; }
-    li { padding: 8px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #f4f6f8; margin: 0; padding: 10px; padding-bottom: 260px; }
+    
+    /* 12個按鈕網格 */
+    .btn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
+    .btn-point { padding: 12px 0; font-size: 16px; font-weight: bold; background: white; border: 1px solid #ccc; border-radius: 6px; color: #333; }
+    .btn-point.active { background-color: #007bff; color: white; border-color: #007bff; }
+    
+    /* 卡片與欄位 */
+    .card { background: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 15px; }
+    .card-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #007bff; }
+    
+    .data-row { display: flex; justify-content: space-between; background: #f8f9fa; padding: 8px; border-radius: 4px; margin-bottom: 10px; font-size: 14px; }
+    .data-label { color: #666; }
+    .data-val { font-weight: bold; color: #222; }
+
+    .input-group { display: flex; gap: 8px; margin-top: 8px; }
+    .input-field { flex: 1; display: flex; flex-direction: column; }
+    .input-field label { font-size: 12px; color: #555; margin-bottom: 4px; }
+    .input-field input { padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; text-align: center; background: #fff; }
+    .input-field input:focus { border-color: #007bff; outline: none; background: #eef6ff; }
+
+    .btn-submit { width: 100%; padding: 14px; font-size: 18px; font-weight: bold; background: #28a745; color: white; border: none; border-radius: 6px; margin-top: 10px; }
+
+    /* 手機客製化數字鍵盤 */
+    #keypad { position: fixed; bottom: 0; left: 0; right: 0; background: #d1d5db; padding: 10px; display: none; grid-template-columns: repeat(3, 1fr); gap: 8px; box-shadow: 0 -2px 10px rgba(0,0,0,0.2); z-index: 1000; }
+    .key { background: white; border: none; padding: 15px; font-size: 20px; font-weight: bold; border-radius: 6px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.2); active { background: #e5e7eb; } }
+    .key-action { background: #9ca3af; color: white; }
+    .key-done { background: #007bff; color: white; grid-column: span 3; }
   </style>
 </head>
 <body>
 
+  <!-- 點位選擇按鈕 B01-B12 -->
+  <div class="btn-grid" id="pointButtons"></div>
+
+  <!-- 目前選擇點位提示 -->
+  <div class="card-title" id="currentPointTitle" style="text-align: center;">請選擇點位</div>
+
+  <!-- E 數據卡片 -->
   <div class="card">
-    <h2>新增數字紀錄</h2>
-    <input type="number" id="numInput" placeholder="請輸入數字">
-    <button id="sendBtn" onclick="sendData()">送出紀錄</button>
+    <div class="card-title">E 數據</div>
+    <div class="data-row"><span class="data-label">上次數據:</span> <span class="data-val" id="eLast">--</span></div>
+    <div class="data-row"><span class="data-label">原始數據:</span> <span class="data-val" id="eOrig">--</span></div>
+    <div class="input-group">
+      <div class="input-field"><label>正鏡</label><input type="text" id="eDirect" readonly onclick="openKeypad(this)"></div>
+      <div class="input-field"><label>倒鏡</label><input type="text" id="eReverse" readonly onclick="openKeypad(this)"></div>
+    </div>
   </div>
 
+  <!-- N 數據卡片 -->
   <div class="card">
-    <h2>歷史資料紀錄</h2>
-    <button onclick="loadData()">重新整理</button>
-    <ul id="dataList">載入中...</ul>
+    <div class="card-title">N 數據</div>
+    <div class="data-row"><span class="data-label">上次數據:</span> <span class="data-val" id="nLast">--</span></div>
+    <div class="data-row"><span class="data-label">原始數據:</span> <span class="data-val" id="nOrig">--</span></div>
+    <div class="input-group">
+      <div class="input-field"><label>正鏡</label><input type="text" id="nDirect" readonly onclick="openKeypad(this)"></div>
+      <div class="input-field"><label>倒鏡</label><input type="text" id="nReverse" readonly onclick="openKeypad(this)"></div>
+    </div>
+  </div>
+
+  <!-- EL 數據卡片 -->
+  <div class="card">
+    <div class="card-title">EL 數據</div>
+    <div class="data-row"><span class="data-label">上次數據:</span> <span class="data-val" id="elLast">--</span></div>
+    <div class="data-row"><span class="data-label">原始數據:</span> <span class="data-val" id="elOrig">--</span></div>
+    <div class="input-group">
+      <div class="input-field"><label>正鏡</label><input type="text" id="elDirect" readonly onclick="openKeypad(this)"></div>
+      <div class="input-field"><label>倒鏡</label><input type="text" id="elReverse" readonly onclick="openKeypad(this)"></div>
+    </div>
+  </div>
+
+  <button class="btn-submit" id="submitBtn" onclick="submitData()">儲存並傳送紀錄</button>
+
+  <!-- 虛擬數字鍵盤 -->
+  <div id="keypad">
+    <button class="key" onclick="pressKey('1')">1</button>
+    <button class="key" onclick="pressKey('2')">2</button>
+    <button class="key" onclick="pressKey('3')">3</button>
+    <button class="key" onclick="pressKey('4')">4</button>
+    <button class="key" onclick="pressKey('5')">5</button>
+    <button class="key" onclick="pressKey('6')">6</button>
+    <button class="key" onclick="pressKey('7')">7</button>
+    <button class="key" onclick="pressKey('8')">8</button>
+    <button class="key" onclick="pressKey('9')">9</button>
+    <button class="key" onclick="pressKey('.')">.</button>
+    <button class="key" onclick="pressKey('0')">0</button>
+    <button class="key key-action" onclick="pressKey('back')">⌫</button>
+    <button class="key key-done" onclick="closeKeypad()">完成</button>
   </div>
 
   <script>
-    // ⚠️ 請替換成你剛剛部署得到的 Google Apps Script 網址
+    // ⚠️️ 替換為你的 Google Apps Script URL
     const GAS_URL = "YOUR_APPS_SCRIPT_URL_HERE";
 
-    // 寫入資料到試算表
-    function sendData() {
-      const numInput = document.getElementById("numInput");
-      const num = numInput.value;
-      if (!num) return alert("請輸入數字！");
+    let currentPoint = "B01";
+    let allData = [];
+    let activeInput = null;
 
-      const btn = document.getElementById("sendBtn");
+    // 初始化建置 B01-B12 按鈕
+    function initButtons() {
+      const grid = document.getElementById("pointButtons");
+      for (let i = 1; i <= 12; i++) {
+        const pId = "B" + String(i).padStart(2, '0');
+        const btn = document.createElement("button");
+        btn.className = `btn-point ${pId === currentPoint ? 'active' : ''}`;
+        btn.textContent = pId;
+        btn.onclick = () => selectPoint(pId);
+        grid.appendChild(btn);
+      }
+    }
+
+    // 切換點位
+    function selectPoint(pId) {
+      currentPoint = pId;
+      document.querySelectorAll(".btn-point").forEach(btn => {
+        btn.classList.toggle("active", btn.textContent === pId);
+      });
+      document.getElementById("currentPointTitle").textContent = `目前點位：${pId}`;
+      clearInputs();
+      renderPointData();
+    }
+
+    // 讀取並分類試算表資料
+    function loadData() {
+      fetch(GAS_URL)
+        .then(res => res.json())
+        .then(rows => {
+          allData = rows;
+          renderPointData();
+        })
+        .catch(err => console.error("讀取失敗", err));
+    }
+
+    // 渲染特定點位的「原始數據」與「上次數據」
+    function renderPointData() {
+      // 篩選出該點位的所有記錄 (row[1] 為點位名稱)
+      const pointRecords = allData.filter(row => row[1] === currentPoint);
+
+      if (pointRecords.length === 0) {
+        setVal("eOrig", "--"); setVal("eLast", "--");
+        setVal("nOrig", "--"); setVal("nLast", "--");
+        setVal("elOrig", "--"); setVal("elLast", "--");
+        return;
+      }
+
+      // 第一筆作為原始數據
+      const first = pointRecords[0];
+      // 第一筆紀錄格式：[時間, 點位, E正, E倒, N正, N倒, EL正, EL倒]
+      setVal("eOrig", `正:${first[2]} / 倒:${first[3]}`);
+      setVal("nOrig", `正:${first[4]} / 倒:${first[5]}`);
+      setVal("elOrig", `正:${first[6]} / 倒:${first[7]}`);
+
+      // 最後一筆作為上次數據
+      const last = pointRecords[pointRecords.length - 1];
+      setVal("eLast", `正:${last[2]} / 倒:${last[3]}`);
+      setVal("nLast", `正:${last[4]} / 倒:${last[5]}`);
+      setVal("elLast", `正:${last[6]} / 倒:${last[7]}`);
+    }
+
+    function setVal(id, text) { document.getElementById(id).textContent = text; }
+
+    // 送出本次數據
+    function submitData() {
+      const payload = {
+        pointId: currentPoint,
+        eDirect: document.getElementById("eDirect").value,
+        eReverse: document.getElementById("eReverse").value,
+        nDirect: document.getElementById("nDirect").value,
+        nReverse: document.getElementById("nReverse").value,
+        elDirect: document.getElementById("elDirect").value,
+        elReverse: document.getElementById("elReverse").value
+      };
+
+      const btn = document.getElementById("submitBtn");
       btn.disabled = true;
       btn.textContent = "傳送中...";
 
@@ -47,49 +187,55 @@
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ number: num })
+        body: JSON.stringify(payload)
       })
       .then(() => {
-        alert("成功寫入試算表！");
-        numInput.value = "";
-        loadData(); // 自動更新列表
+        alert(`${currentPoint} 資料儲存成功！`);
+        clearInputs();
+        closeKeypad();
+        loadData(); // 重新載入最新資料
       })
       .catch(err => alert("失敗：" + err))
       .finally(() => {
         btn.disabled = false;
-        btn.textContent = "送出紀錄";
+        btn.textContent = "儲存並傳送紀錄";
       });
     }
 
-    // 從試算表讀取資料
-    function loadData() {
-      const list = document.getElementById("dataList");
-      list.innerHTML = "讀取中...";
-
-      fetch(GAS_URL)
-        .then(res => res.json())
-        .then(rows => {
-          list.innerHTML = "";
-          if (rows.length === 0) {
-            list.innerHTML = "<li>目前沒有資料</li>";
-            return;
-          }
-          // 迴圈讀取每行資料 (row[0]=時間, row[1]=數字)
-          rows.forEach((row, index) => {
-            const li = document.createElement("li");
-            const timeStr = row[0] ? new Date(row[0]).toLocaleString() : "未知時間";
-            li.innerHTML = `<span>${timeStr}</span> <strong>${row[1]}</strong>`;
-            list.appendChild(li);
-          });
-        })
-        .catch(err => {
-          list.innerHTML = "<li>資料讀取失敗，請確認 API 網址是否正確。</li>";
-          console.error(err);
-        });
+    function clearInputs() {
+      ["eDirect","eReverse","nDirect","nReverse","elDirect","elReverse"].forEach(id => {
+        document.getElementById(id).value = "";
+      });
     }
 
-    // 網頁載入後自動讀取資料
-    window.onload = loadData;
+    /* --- 虛擬數字鍵盤邏輯 --- */
+    function openKeypad(inputElem) {
+      activeInput = inputElem;
+      document.getElementById("keypad").style.display = "grid";
+    }
+
+    function closeKeypad() {
+      document.getElementById("keypad").style.display = "none";
+      if(activeInput) activeInput.blur();
+      activeInput = null;
+    }
+
+    function pressKey(key) {
+      if (!activeInput) return;
+      if (key === 'back') {
+        activeInput.value = activeInput.value.slice(0, -1);
+      } else {
+        // 防止重複小數點
+        if (key === '.' && activeInput.value.includes('.')) return;
+        activeInput.value += key;
+      }
+    }
+
+    window.onload = () => {
+      initButtons();
+      selectPoint("B01");
+      loadData();
+    };
   </script>
 </body>
 </html>
