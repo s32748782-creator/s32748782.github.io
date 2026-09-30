@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>點位數據紀錄系統</title>
   <style>
-    /* 全局重置邊距與邊框計算模式，避免擠爆邊界 */
+    /* 全局重置邊距與邊框計算模式 */
     *, *::before, *::after { 
       box-sizing: border-box; 
       margin: 0;
@@ -13,7 +13,7 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
     }
     
-    /* 防範手機畫面產生左右滑動的橫向滾動條 */
+    /* 防範手機畫面產生左右滑動條 */
     html, body {
       width: 100%;
       overflow-x: hidden;
@@ -52,7 +52,7 @@
       border-color: #007bff; 
     }
     
-    /* 卡片與數據列 */
+    /* 卡片樣式 */
     .card { 
       background: white; 
       border-radius: 8px; 
@@ -69,6 +69,7 @@
       color: #007bff; 
     }
     
+    /* 歷史數據列 */
     .data-row { 
       display: flex; 
       justify-content: space-between; 
@@ -98,7 +99,7 @@
       width: 100%;
     }
 
-    /* 輸入框雙欄排版（防溢出） */
+    /* 輸入區塊雙欄與正負號按鈕組合 */
     .input-group { 
       display: flex; 
       gap: 8px; 
@@ -108,7 +109,7 @@
 
     .input-field { 
       flex: 1; 
-      min-width: 0; /* 防止內容撐大容器 */
+      min-width: 0; 
       display: flex; 
       flex-direction: column; 
     }
@@ -119,7 +120,13 @@
       margin-bottom: 4px; 
     }
 
-    .input-field input { 
+    .input-wrapper {
+      display: flex;
+      gap: 4px;
+    }
+
+    .input-wrapper input { 
+      flex: 1;
       width: 100%;
       padding: 10px 4px; 
       font-size: 17px; 
@@ -127,15 +134,35 @@
       border-radius: 4px; 
       text-align: center; 
       background: #fff; 
-      -webkit-appearance: none; /* 移除 iOS Safari 預設陰影樣式 */
+      -webkit-appearance: none; 
     }
 
-    .input-field input:focus { 
+    .input-wrapper input:focus { 
       border-color: #007bff; 
       outline: none; 
-      background: #fff; 
     }
 
+    /* 正負號按鈕 (±) */
+    .btn-toggle-sign {
+      width: 38px;
+      background: #e9ecef;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #333;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .btn-toggle-sign:active {
+      background: #ced4da;
+    }
+
+    /* 提交按鈕 */
     .btn-submit { 
       width: 100%; 
       padding: 14px; 
@@ -166,8 +193,20 @@
     <div class="data-row"><span class="data-label">上次正/倒鏡:</span> <span class="data-val" id="eLastDetails">--</span></div>
     
     <div class="input-group">
-      <div class="input-field"><label>正鏡</label><input type="text" id="eDirect" inputmode="decimal" pattern="[0-9.-]*" placeholder="0.0" oninput="handleInput(this, 'e')"></div>
-      <div class="input-field"><label>倒鏡</label><input type="text" id="eReverse" inputmode="decimal" pattern="[0-9.-]*" placeholder="0.0" oninput="handleInput(this, 'e')"></div>
+      <div class="input-field">
+        <label>正鏡</label>
+        <div class="input-wrapper">
+          <input type="text" id="eDirect" inputmode="decimal" placeholder="0.0" oninput="handleInput(this, 'e')">
+          <button type="button" class="btn-toggle-sign" onclick="toggleSign('eDirect', 'e')">±</button>
+        </div>
+      </div>
+      <div class="input-field">
+        <label>倒鏡</label>
+        <div class="input-wrapper">
+          <input type="text" id="eReverse" inputmode="decimal" placeholder="0.0" oninput="handleInput(this, 'e')">
+          <button type="button" class="btn-toggle-sign" onclick="toggleSign('eReverse', 'e')">±</button>
+        </div>
+      </div>
     </div>
     <div class="calc-box" id="eCalc">本次即時平均：--</div>
   </div>
@@ -180,8 +219,20 @@
     <div class="data-row"><span class="data-label">上次正/倒鏡:</span> <span class="data-val" id="nLastDetails">--</span></div>
     
     <div class="input-group">
-      <div class="input-field"><label>正鏡</label><input type="text" id="nDirect" inputmode="decimal" pattern="[0-9.-]*" placeholder="0.0" oninput="handleInput(this, 'n')"></div>
-      <div class="input-field"><label>倒鏡</label><input type="text" id="nReverse" inputmode="decimal" pattern="[0-9.-]*" placeholder="0.0" oninput="handleInput(this, 'n')"></div>
+      <div class="input-field">
+        <label>正鏡</label>
+        <div class="input-wrapper">
+          <input type="text" id="nDirect" inputmode="decimal" placeholder="0.0" oninput="handleInput(this, 'n')">
+          <button type="button" class="btn-toggle-sign" onclick="toggleSign('nDirect', 'n')">±</button>
+        </div>
+      </div>
+      <div class="input-field">
+        <label>倒鏡</label>
+        <div class="input-wrapper">
+          <input type="text" id="nReverse" inputmode="decimal" placeholder="0.0" oninput="handleInput(this, 'n')">
+          <button type="button" class="btn-toggle-sign" onclick="toggleSign('nReverse', 'n')">±</button>
+        </div>
+      </div>
     </div>
     <div class="calc-box" id="nCalc">本次即時平均：--</div>
   </div>
@@ -194,8 +245,20 @@
     <div class="data-row"><span class="data-label">上次正/倒鏡:</span> <span class="data-val" id="elLastDetails">--</span></div>
     
     <div class="input-group">
-      <div class="input-field"><label>正鏡</label><input type="text" id="elDirect" inputmode="decimal" pattern="[0-9.-]*" placeholder="0.0" oninput="handleInput(this, 'el')"></div>
-      <div class="input-field"><label>倒鏡</label><input type="text" id="elReverse" inputmode="decimal" pattern="[0-9.-]*" placeholder="0.0" oninput="handleInput(this, 'el')"></div>
+      <div class="input-field">
+        <label>正鏡</label>
+        <div class="input-wrapper">
+          <input type="text" id="elDirect" inputmode="decimal" placeholder="0.0" oninput="handleInput(this, 'el')">
+          <button type="button" class="btn-toggle-sign" onclick="toggleSign('elDirect', 'el')">±</button>
+        </div>
+      </div>
+      <div class="input-field">
+        <label>倒鏡</label>
+        <div class="input-wrapper">
+          <input type="text" id="elReverse" inputmode="decimal" placeholder="0.0" oninput="handleInput(this, 'el')">
+          <button type="button" class="btn-toggle-sign" onclick="toggleSign('elReverse', 'el')">±</button>
+        </div>
+      </div>
     </div>
     <div class="calc-box" id="elCalc">本次即時平均：--</div>
   </div>
@@ -203,13 +266,13 @@
   <button class="btn-submit" id="submitBtn" onclick="submitData()">儲存並傳送紀錄</button>
 
   <script>
-    // ⚠️ 請填入您 Apps Script 部署後的 Web App URL
+    // ⚠️ 請記得填入您 Google Apps Script 部署發布後的 Web App URL
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwKzTE_WvHJ7SNd8gHepN9MlRJLPzhVzB8QfUgty0KZ0-M7g_G3lergJfPtLu-FQb-p/exec";
 
     let currentPoint = "B01";
     let allData = [];
 
-    // 初始化 B01-B12 按鈕
+    // 初始化生成 B01 - B12 按鈕
     function initButtons() {
       const grid = document.getElementById("pointButtons");
       for (let i = 1; i <= 12; i++) {
@@ -222,7 +285,7 @@
       }
     }
 
-    // 切換點位
+    // 切換當前選擇點位
     function selectPoint(pId) {
       currentPoint = pId;
       document.querySelectorAll(".btn-point").forEach(btn => {
@@ -233,33 +296,46 @@
       renderPointData();
     }
 
-    // 過濾非數字/小數點/負號字元，並實時計算平均值
+    // 正負號切換按鈕 (±) 的運算邏輯
+    function toggleSign(inputId, type) {
+      const input = document.getElementById(inputId);
+      let val = input.value.trim();
+
+      if (!val) return; // 輸入框為空時不動作
+
+      if (val.startsWith('-')) {
+        input.value = val.substring(1); // 若已有負號，則轉為正數
+      } else {
+        input.value = '-' + val; // 若為正數，則加上負號
+      }
+
+      updateLiveAvg(type); // 切換正負號後重新連動計算平均
+    }
+
+    // 正則輸入限制（僅允許數字與小數點，避免雜訊）
     function handleInput(input, type) {
       let val = input.value;
-
-      // 1. 判斷開頭是否有負號 '-'
       const isNegative = val.startsWith('-');
 
-      // 2. 移除非數字與小數點的字元
+      // 過濾掉所有非 0-9 與小數點的字元
       val = val.replace(/[^0-9.]/g, '');
 
-      // 3. 確保全字串最多只有一個小數點
+      // 確保最多只有一個小數點
       const parts = val.split('.');
       if (parts.length > 2) {
         val = parts[0] + '.' + parts.slice(1).join('');
       }
 
-      // 4. 如果原本開頭是負號，補回負號
+      // 如果原本有負號，重新補回
       if (isNegative) {
         val = '-' + val;
       }
 
       input.value = val;
-
-      // 5. 實時更新即時平均值
       updateLiveAvg(type);
     }
 
+    // 即時計算並顯示正/倒鏡平均值
     function updateLiveAvg(type) {
       const dVal = parseFloat(document.getElementById(`${type}Direct`).value);
       const rVal = parseFloat(document.getElementById(`${type}Reverse`).value);
@@ -279,7 +355,7 @@
       document.getElementById(`${type}Calc`).textContent = `本次即時平均：${avgText}`;
     }
 
-    // 從 Apps Script 讀取試算表全部數據
+    // 從 Google Apps Script 後端載入試算表歷史紀錄
     function loadData() {
       fetch(GAS_URL)
         .then(res => res.json())
@@ -287,12 +363,12 @@
           allData = rows;
           renderPointData();
         })
-        .catch(err => console.error("讀取失敗", err));
+        .catch(err => console.error("讀取歷史數據失敗:", err));
     }
 
-    // 渲染當前點位的數據
+    // 渲染當前點位的歷史與原始數據
     function renderPointData() {
-      // row[1] 為 B 欄位：點位編號
+      // row[1] 對應 B 欄 (點位編號)
       const pointRecords = allData.filter(row => String(row[1]).trim() === currentPoint);
 
       if (pointRecords.length === 0) {
@@ -302,24 +378,21 @@
         return;
       }
 
-      // 1. 第一筆紀錄 (原始數據)：對應 C, D, E 欄位 (row[2], row[3], row[4])
+      // 1. 第一筆記錄：原始數據 (對應 C, D, E 欄)
       const first = pointRecords[0];
       setVal("eOrig", first[2] || "--");
       setVal("nOrig", first[3] || "--");
       setVal("elOrig", first[4] || "--");
 
-      // 2. 最後一筆紀錄 (上次數據)：對應 C,D,E 平均值與 F~K 欄位的正倒鏡細節
+      // 2. 最後一筆記錄：上次數據 (對應 C, D, E 欄平均 與 F~K 欄正倒鏡)
       const last = pointRecords[pointRecords.length - 1];
       
-      // E 數據
       setVal("eLastAvg", last[2] || "--");
       setVal("eLastDetails", `正:${last[5] || '--'} / 倒:${last[6] || '--'}`);
       
-      // N 數據
       setVal("nLastAvg", last[3] || "--");
       setVal("nLastDetails", `正:${last[7] || '--'} / 倒:${last[8] || '--'}`);
       
-      // EL 數據
       setVal("elLastAvg", last[4] || "--");
       setVal("elLastDetails", `正:${last[9] || '--'} / 倒:${last[10] || '--'}`);
     }
@@ -328,7 +401,7 @@
       document.getElementById(id).textContent = text; 
     }
 
-    // 提交數據至 Apps Script
+    // 提交輸入數據至 GAS 後端
     function submitData() {
       const payload = {
         pointId: currentPoint,
@@ -353,7 +426,7 @@
       .then(() => {
         alert(`${currentPoint} 資料儲存成功！`);
         clearInputs();
-        loadData(); // 重新載入試算表最新數據
+        loadData(); // 重新讀取並刷新介面
       })
       .catch(err => alert("傳送失敗：" + err))
       .finally(() => {
@@ -362,7 +435,7 @@
       });
     }
 
-    // 清空輸入框與計算區域
+    // 清空輸入框與計算顯示
     function clearInputs() {
       ["eDirect","eReverse","nDirect","nReverse","elDirect","elReverse"].forEach(id => {
         document.getElementById(id).value = "";
