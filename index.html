@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>點位數據紀錄系統</title>
   <style>
-    /* 全局重置邊距與邊框計算模式 */
     *, *::before, *::after { 
       box-sizing: border-box; 
       margin: 0;
@@ -13,7 +12,6 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
     }
     
-    /* 防範手機畫面產生左右滑動條 */
     html, body {
       width: 100%;
       overflow-x: hidden;
@@ -52,7 +50,6 @@
       border-color: #007bff; 
     }
     
-    /* 卡片樣式 */
     .card { 
       background: white; 
       border-radius: 8px; 
@@ -69,21 +66,27 @@
       color: #007bff; 
     }
     
-    /* 歷史數據列 */
+    /* 歷史數據與時間欄位樣式 */
     .data-row { 
       display: flex; 
       justify-content: space-between; 
       align-items: center;
       background: #f8f9fa; 
-      padding: 8px 10px; 
+      padding: 7px 10px; 
       border-radius: 4px; 
-      margin-bottom: 6px; 
+      margin-bottom: 5px; 
       font-size: 13px; 
       word-break: break-all;
     }
 
+    .data-row.time-row {
+      background: #f0f4f8;
+      border-left: 3px solid #007bff;
+    }
+
     .data-label { color: #666; flex-shrink: 0; }
     .data-val { font-weight: bold; color: #222; text-align: right; }
+    .data-val.time-val { color: #28a745; }
 
     /* 即時平均計算框 */
     .calc-box { 
@@ -99,7 +102,7 @@
       width: 100%;
     }
 
-    /* 輸入區塊雙欄與正負號按鈕組合 */
+    /* 輸入區塊與正負號按鈕 */
     .input-group { 
       display: flex; 
       gap: 8px; 
@@ -142,7 +145,6 @@
       outline: none; 
     }
 
-    /* 正負號按鈕 (±) */
     .btn-toggle-sign {
       width: 38px;
       background: #e9ecef;
@@ -162,7 +164,6 @@
       background: #ced4da;
     }
 
-    /* 提交按鈕 */
     .btn-submit { 
       width: 100%; 
       padding: 14px; 
@@ -189,6 +190,7 @@
   <div class="card">
     <div class="card-title">E 數據</div>
     <div class="data-row"><span class="data-label">原始 E 數據:</span> <span class="data-val" id="eOrig">--</span></div>
+    <div class="data-row time-row"><span class="data-label">上次紀錄時間:</span> <span class="data-val time-val" id="eLastTime">--</span></div>
     <div class="data-row"><span class="data-label">上次 E 數據 (平均):</span> <span class="data-val" id="eLastAvg">--</span></div>
     <div class="data-row"><span class="data-label">上次正/倒鏡:</span> <span class="data-val" id="eLastDetails">--</span></div>
     
@@ -215,6 +217,7 @@
   <div class="card">
     <div class="card-title">N 數據</div>
     <div class="data-row"><span class="data-label">原始 N 數據:</span> <span class="data-val" id="nOrig">--</span></div>
+    <div class="data-row time-row"><span class="data-label">上次紀錄時間:</span> <span class="data-val time-val" id="nLastTime">--</span></div>
     <div class="data-row"><span class="data-label">上次 N 數據 (平均):</span> <span class="data-val" id="nLastAvg">--</span></div>
     <div class="data-row"><span class="data-label">上次正/倒鏡:</span> <span class="data-val" id="nLastDetails">--</span></div>
     
@@ -241,6 +244,7 @@
   <div class="card">
     <div class="card-title">EL 數據</div>
     <div class="data-row"><span class="data-label">原始 EL 數據:</span> <span class="data-val" id="elOrig">--</span></div>
+    <div class="data-row time-row"><span class="data-label">上次紀錄時間:</span> <span class="data-val time-val" id="elLastTime">--</span></div>
     <div class="data-row"><span class="data-label">上次 EL 數據 (平均):</span> <span class="data-val" id="elLastAvg">--</span></div>
     <div class="data-row"><span class="data-label">上次正/倒鏡:</span> <span class="data-val" id="elLastDetails">--</span></div>
     
@@ -266,13 +270,13 @@
   <button class="btn-submit" id="submitBtn" onclick="submitData()">儲存並傳送紀錄</button>
 
   <script>
-    // ⚠️ 請記得填入您 Google Apps Script 部署發布後的 Web App URL
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwKzTE_WvHJ7SNd8gHepN9MlRJLPzhVzB8QfUgty0KZ0-M7g_G3lergJfPtLu-FQb-p/exec";
+    // ⚠️ 請填入您 Apps Script 部署發布後的 Web App URL
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwI4rmeNP189PYLOsIWhdxc_ZAqxN3So-72S-C3NEnJCmz-Vq_Zc4TvvvHN8Y89sOrQ/exec";
 
     let currentPoint = "B01";
     let allData = [];
 
-    // 初始化生成 B01 - B12 按鈕
+    // 初始化 B01 - B12 按鈕
     function initButtons() {
       const grid = document.getElementById("pointButtons");
       for (let i = 1; i <= 12; i++) {
@@ -285,7 +289,7 @@
       }
     }
 
-    // 切換當前選擇點位
+    // 切換點位 (0 秒響應)
     function selectPoint(pId) {
       currentPoint = pId;
       document.querySelectorAll(".btn-point").forEach(btn => {
@@ -296,37 +300,34 @@
       renderPointData();
     }
 
-    // 正負號切換按鈕 (±) 的運算邏輯
+    // 正負號切換按鈕 (±)
     function toggleSign(inputId, type) {
       const input = document.getElementById(inputId);
       let val = input.value.trim();
 
-      if (!val) return; // 輸入框為空時不動作
+      if (!val) return;
 
       if (val.startsWith('-')) {
-        input.value = val.substring(1); // 若已有負號，則轉為正數
+        input.value = val.substring(1);
       } else {
-        input.value = '-' + val; // 若為正數，則加上負號
+        input.value = '-' + val;
       }
 
-      updateLiveAvg(type); // 切換正負號後重新連動計算平均
+      updateLiveAvg(type);
     }
 
-    // 正則輸入限制（僅允許數字與小數點，避免雜訊）
+    // 格式化輸入
     function handleInput(input, type) {
       let val = input.value;
       const isNegative = val.startsWith('-');
 
-      // 過濾掉所有非 0-9 與小數點的字元
       val = val.replace(/[^0-9.]/g, '');
 
-      // 確保最多只有一個小數點
       const parts = val.split('.');
       if (parts.length > 2) {
         val = parts[0] + '.' + parts.slice(1).join('');
       }
 
-      // 如果原本有負號，重新補回
       if (isNegative) {
         val = '-' + val;
       }
@@ -335,7 +336,7 @@
       updateLiveAvg(type);
     }
 
-    // 即時計算並顯示正/倒鏡平均值
+    // 即時計算平均值
     function updateLiveAvg(type) {
       const dVal = parseFloat(document.getElementById(`${type}Direct`).value);
       const rVal = parseFloat(document.getElementById(`${type}Reverse`).value);
@@ -355,44 +356,77 @@
       document.getElementById(`${type}Calc`).textContent = `本次即時平均：${avgText}`;
     }
 
-    // 從 Google Apps Script 後端載入試算表歷史紀錄
+    // 🚀 優化一：快取優先 + 背景同步 (0 秒加載體驗)
     function loadData() {
+      // 1. 先讀取快取
+      const cached = localStorage.getItem("point_sheet_data");
+      if (cached) {
+        try {
+          allData = JSON.parse(cached);
+          renderPointData();
+        } catch (e) {
+          console.error("快取讀取失敗", e);
+        }
+      }
+
+      // 2. 背景請求 GAS 最新資料
       fetch(GAS_URL)
         .then(res => res.json())
         .then(rows => {
           allData = rows;
-          renderPointData();
+          localStorage.setItem("point_sheet_data", JSON.stringify(rows));
+          renderPointData(); // 自動背景刷新
         })
-        .catch(err => console.error("讀取歷史數據失敗:", err));
+        .catch(err => console.error("背景同步失敗:", err));
     }
 
-    // 渲染當前點位的歷史與原始數據
+    // 時間格式化工具：例如轉換成 "09/30 15:30"
+    function formatDate(timeStr) {
+      if (!timeStr || timeStr === "--") return "--";
+      const d = new Date(timeStr);
+      if (isNaN(d.getTime())) return timeStr; // 如果無法解析則原樣顯示
+
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const date = String(d.getDate()).padStart(2, '0');
+      const hours = String(d.getHours()).padStart(2, '0');
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+
+      return `${month}/${date} ${hours}:${minutes}`;
+    }
+
+    // 渲染資料 (包含上次時間)
     function renderPointData() {
-      // row[1] 對應 B 欄 (點位編號)
       const pointRecords = allData.filter(row => String(row[1]).trim() === currentPoint);
 
       if (pointRecords.length === 0) {
-        setVal("eOrig", "--"); setVal("eLastAvg", "--"); setVal("eLastDetails", "--");
-        setVal("nOrig", "--"); setVal("nLastAvg", "--"); setVal("nLastDetails", "--");
-        setVal("elOrig", "--"); setVal("elLastAvg", "--"); setVal("elLastDetails", "--");
+        setVal("eOrig", "--"); setVal("eLastTime", "--"); setVal("eLastAvg", "--"); setVal("eLastDetails", "--");
+        setVal("nOrig", "--"); setVal("nLastTime", "--"); setVal("nLastAvg", "--"); setVal("nLastDetails", "--");
+        setVal("elOrig", "--"); setVal("elLastTime", "--"); setVal("elLastAvg", "--"); setVal("elLastDetails", "--");
         return;
       }
 
-      // 1. 第一筆記錄：原始數據 (對應 C, D, E 欄)
+      // 1. 第一筆記錄 (原始數據：C, D, E 欄)
       const first = pointRecords[0];
       setVal("eOrig", first[2] || "--");
       setVal("nOrig", first[3] || "--");
       setVal("elOrig", first[4] || "--");
 
-      // 2. 最後一筆記錄：上次數據 (對應 C, D, E 欄平均 與 F~K 欄正倒鏡)
+      // 2. 最後一筆記錄 (上次數據：A 欄時間, C~E 欄平均, F~K 欄細節)
       const last = pointRecords[pointRecords.length - 1];
-      
+      const formattedTime = formatDate(last[0]);
+
+      // E 數據
+      setVal("eLastTime", formattedTime);
       setVal("eLastAvg", last[2] || "--");
       setVal("eLastDetails", `正:${last[5] || '--'} / 倒:${last[6] || '--'}`);
       
+      // N 數據
+      setVal("nLastTime", formattedTime);
       setVal("nLastAvg", last[3] || "--");
       setVal("nLastDetails", `正:${last[7] || '--'} / 倒:${last[8] || '--'}`);
       
+      // EL 數據
+      setVal("elLastTime", formattedTime);
       setVal("elLastAvg", last[4] || "--");
       setVal("elLastDetails", `正:${last[9] || '--'} / 倒:${last[10] || '--'}`);
     }
@@ -401,21 +435,53 @@
       document.getElementById(id).textContent = text; 
     }
 
-    // 提交輸入數據至 GAS 後端
+    // 🚀 優化三：樂觀更新 (按下儲存 0 秒反饋)
     function submitData() {
-      const payload = {
-        pointId: currentPoint,
-        eDirect: document.getElementById("eDirect").value,
-        eReverse: document.getElementById("eReverse").value,
-        nDirect: document.getElementById("nDirect").value,
-        nReverse: document.getElementById("nReverse").value,
-        elDirect: document.getElementById("elDirect").value,
-        elReverse: document.getElementById("elReverse").value
+      const eDirect = document.getElementById("eDirect").value;
+      const eReverse = document.getElementById("eReverse").value;
+      const nDirect = document.getElementById("nDirect").value;
+      const nReverse = document.getElementById("nReverse").value;
+      const elDirect = document.getElementById("elDirect").value;
+      const elReverse = document.getElementById("elReverse").value;
+
+      // 輔助計算平均
+      const calcAvg = (d, r) => {
+        let numD = parseFloat(d), numR = parseFloat(r);
+        if (!isNaN(numD) && !isNaN(numR)) return ((numD + numR) / 2).toFixed(4);
+        if (!isNaN(numD)) return numD.toFixed(4);
+        if (!isNaN(numR)) return numR.toFixed(4);
+        return "";
       };
 
+      const now = new Date().toISOString();
+
+      // 本地樂觀更新資料結構
+      const newRow = [
+        now,
+        currentPoint,
+        calcAvg(eDirect, eReverse),
+        calcAvg(nDirect, nReverse),
+        calcAvg(elDirect, elReverse),
+        eDirect, eReverse, nDirect, nReverse, elDirect, elReverse
+      ];
+
+      // 1. 立刻在前端更新 & 寫入本地快取
+      allData.push(newRow);
+      localStorage.setItem("point_sheet_data", JSON.stringify(allData));
+      
+      // 2. 立刻渲染畫面並清空輸入框
+      renderPointData();
+      clearInputs();
+
+      // 3. 背景靜默傳送至 GAS 後端
       const btn = document.getElementById("submitBtn");
       btn.disabled = true;
       btn.textContent = "傳送中...";
+
+      const payload = {
+        pointId: currentPoint,
+        eDirect, eReverse, nDirect, nReverse, elDirect, elReverse
+      };
 
       fetch(GAS_URL, {
         method: "POST",
@@ -424,18 +490,16 @@
         body: JSON.stringify(payload)
       })
       .then(() => {
-        alert(`${currentPoint} 資料儲存成功！`);
-        clearInputs();
-        loadData(); // 重新讀取並刷新介面
+        // 背景成功上傳
       })
-      .catch(err => alert("傳送失敗：" + err))
+      .catch(err => console.error("靜默上傳失敗:", err))
       .finally(() => {
         btn.disabled = false;
         btn.textContent = "儲存並傳送紀錄";
       });
     }
 
-    // 清空輸入框與計算顯示
+    // 清空輸入框
     function clearInputs() {
       ["eDirect","eReverse","nDirect","nReverse","elDirect","elReverse"].forEach(id => {
         document.getElementById(id).value = "";
