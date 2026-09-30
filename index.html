@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>數字紀錄系統</title>
+  <style>
+    body { font-family: sans-serif; max-width: 500px; margin: 30px auto; padding: 0 15px; }
+    .card { border: 1px solid #ddd; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    input, button { width: 100%; padding: 10px; margin-top: 10px; box-sizing: border-box; border-radius: 4px; }
+    input { border: 1px solid #ccc; }
+    button { background-color: #007bff; color: white; border: none; cursor: pointer; font-size: 16px; }
+    button:hover { background-color: #0056b3; }
+    ul { list-style: none; padding: 0; }
+    li { padding: 8px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>新增數字紀錄</h2>
+    <input type="number" id="numInput" placeholder="請輸入數字">
+    <button id="sendBtn" onclick="sendData()">送出紀錄</button>
+  </div>
+
+  <div class="card">
+    <h2>歷史資料紀錄</h2>
+    <button onclick="loadData()">重新整理</button>
+    <ul id="dataList">載入中...</ul>
+  </div>
+
+  <script>
+    // ⚠️ 請替換成你剛剛部署得到的 Google Apps Script 網址
+    const GAS_URL = "YOUR_APPS_SCRIPT_URL_HERE";
+
+    // 寫入資料到試算表
+    function sendData() {
+      const numInput = document.getElementById("numInput");
+      const num = numInput.value;
+      if (!num) return alert("請輸入數字！");
+
+      const btn = document.getElementById("sendBtn");
+      btn.disabled = true;
+      btn.textContent = "傳送中...";
+
+      fetch(GAS_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ number: num })
+      })
+      .then(() => {
+        alert("成功寫入試算表！");
+        numInput.value = "";
+        loadData(); // 自動更新列表
+      })
+      .catch(err => alert("失敗：" + err))
+      .finally(() => {
+        btn.disabled = false;
+        btn.textContent = "送出紀錄";
+      });
+    }
+
+    // 從試算表讀取資料
+    function loadData() {
+      const list = document.getElementById("dataList");
+      list.innerHTML = "讀取中...";
+
+      fetch(GAS_URL)
+        .then(res => res.json())
+        .then(rows => {
+          list.innerHTML = "";
+          if (rows.length === 0) {
+            list.innerHTML = "<li>目前沒有資料</li>";
+            return;
+          }
+          // 迴圈讀取每行資料 (row[0]=時間, row[1]=數字)
+          rows.forEach((row, index) => {
+            const li = document.createElement("li");
+            const timeStr = row[0] ? new Date(row[0]).toLocaleString() : "未知時間";
+            li.innerHTML = `<span>${timeStr}</span> <strong>${row[1]}</strong>`;
+            list.appendChild(li);
+          });
+        })
+        .catch(err => {
+          list.innerHTML = "<li>資料讀取失敗，請確認 API 網址是否正確。</li>";
+          console.error(err);
+        });
+    }
+
+    // 網頁載入後自動讀取資料
+    window.onload = loadData;
+  </script>
+</body>
+</html>
