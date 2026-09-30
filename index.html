@@ -88,11 +88,11 @@
     .data-val { font-weight: bold; color: #222; text-align: right; }
     .data-val.time-val { color: #28a745; }
 
-    /* 即時平均計算框 */
+    /* 數據修正按鈕 / 即時平均框 */
     .calc-box { 
       background: #eef6ff; 
       border: 1px dashed #007bff; 
-      padding: 8px; 
+      padding: 10px; 
       border-radius: 4px; 
       margin-top: 8px; 
       font-size: 14px; 
@@ -100,6 +100,12 @@
       color: #0056b3; 
       font-weight: bold; 
       width: 100%;
+      cursor: pointer;
+    }
+    .calc-box.editable {
+      background: #fff3cd;
+      border-color: #ffc107;
+      color: #856404;
     }
 
     /* 輸入區塊與正負號按鈕 */
@@ -140,6 +146,14 @@
       -webkit-appearance: none; 
     }
 
+    /* 灰色禁用狀態 */
+    .input-wrapper input:disabled {
+      background: #e9ecef;
+      color: #6c757d;
+      border-color: #ced4da;
+      -webkit-text-fill-color: #6c757d;
+    }
+
     .input-wrapper input:focus { 
       border-color: #007bff; 
       outline: none; 
@@ -158,6 +172,11 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+    }
+    .btn-toggle-sign:disabled {
+      background: #e9ecef;
+      color: #adb5bd;
+      cursor: not-allowed;
     }
 
     .btn-submit { 
@@ -241,7 +260,6 @@
       flex: 1;
     }
 
-    /* 今日數據卡片 */
     .today-card {
       background: #f8f9fa;
       border: 1px solid #dee2e6;
@@ -282,8 +300,8 @@
       color: #495057;
     }
 
-    .diff-pos { color: #d9534f; font-weight: bold; } /* 正偏差紅 */
-    .diff-neg { color: #0275d8; font-weight: bold; } /* 負偏差藍 */
+    .diff-pos { color: #d9534f; font-weight: bold; }
+    .diff-neg { color: #0275d8; font-weight: bold; }
     .diff-zero { color: #6c757d; }
   </style>
 </head>
@@ -307,19 +325,19 @@
       <div class="input-field">
         <label>正鏡</label>
         <div class="input-wrapper">
-          <input type="text" id="eDirect" inputmode="decimal" placeholder="0.0" oninput="handleInput(this, 'e')">
-          <button type="button" class="btn-toggle-sign" onclick="toggleSign('eDirect', 'e')">±</button>
+          <input type="text" id="eDirect" inputmode="decimal" placeholder="0.0" disabled oninput="handleInput(this, 'e')">
+          <button type="button" class="btn-toggle-sign" id="eBtnSign" disabled onclick="toggleSign('eDirect', 'e')">±</button>
         </div>
       </div>
       <div class="input-field">
         <label>倒鏡</label>
         <div class="input-wrapper">
-          <input type="text" id="eReverse" inputmode="decimal" placeholder="0.0" oninput="handleInput(this, 'e')">
-          <button type="button" class="btn-toggle-sign" onclick="toggleSign('eReverse', 'e')">±</button>
+          <input type="text" id="eReverse" inputmode="decimal" placeholder="0.0" disabled oninput="handleInput(this, 'e')">
+          <button type="button" class="btn-toggle-sign" id="eRevBtnSign" disabled onclick="toggleSign('eReverse', 'e')">±</button>
         </div>
       </div>
     </div>
-    <div class="calc-box" id="eCalc">本次即時平均：--</div>
+    <div class="calc-box" id="eCalc" onclick="toggleEditMode('e')">🔒 數據修正 (點擊解鎖) | 本次平均：--</div>
   </div>
 
   <!-- N 數據卡片 -->
@@ -334,19 +352,19 @@
       <div class="input-field">
         <label>正鏡</label>
         <div class="input-wrapper">
-          <input type="text" id="nDirect" inputmode="decimal" placeholder="0.0" oninput="handleInput(this, 'n')">
-          <button type="button" class="btn-toggle-sign" onclick="toggleSign('nDirect', 'n')">±</button>
+          <input type="text" id="nDirect" inputmode="decimal" placeholder="0.0" disabled oninput="handleInput(this, 'n')">
+          <button type="button" class="btn-toggle-sign" id="nBtnSign" disabled onclick="toggleSign('nDirect', 'n')">±</button>
         </div>
       </div>
       <div class="input-field">
         <label>倒鏡</label>
         <div class="input-wrapper">
-          <input type="text" id="nReverse" inputmode="decimal" placeholder="0.0" oninput="handleInput(this, 'n')">
-          <button type="button" class="btn-toggle-sign" onclick="toggleSign('nReverse', 'n')">±</button>
+          <input type="text" id="nReverse" inputmode="decimal" placeholder="0.0" disabled oninput="handleInput(this, 'n')">
+          <button type="button" class="btn-toggle-sign" id="nRevBtnSign" disabled onclick="toggleSign('nReverse', 'n')">±</button>
         </div>
       </div>
     </div>
-    <div class="calc-box" id="nCalc">本次即時平均：--</div>
+    <div class="calc-box" id="nCalc" onclick="toggleEditMode('n')">🔒 數據修正 (點擊解鎖) | 本次平均：--</div>
   </div>
 
   <!-- EL 數據卡片 -->
@@ -361,24 +379,24 @@
       <div class="input-field">
         <label>正鏡</label>
         <div class="input-wrapper">
-          <input type="text" id="elDirect" inputmode="decimal" placeholder="0.0" oninput="handleInput(this, 'el')">
-          <button type="button" class="btn-toggle-sign" onclick="toggleSign('elDirect', 'el')">±</button>
+          <input type="text" id="elDirect" inputmode="decimal" placeholder="0.0" disabled oninput="handleInput(this, 'el')">
+          <button type="button" class="btn-toggle-sign" id="elBtnSign" disabled onclick="toggleSign('elDirect', 'el')">±</button>
         </div>
       </div>
       <div class="input-field">
         <label>倒鏡</label>
         <div class="input-wrapper">
-          <input type="text" id="elReverse" inputmode="decimal" placeholder="0.0" oninput="handleInput(this, 'el')">
-          <button type="button" class="btn-toggle-sign" onclick="toggleSign('elReverse', 'el')">±</button>
+          <input type="text" id="elReverse" inputmode="decimal" placeholder="0.0" disabled oninput="handleInput(this, 'el')">
+          <button type="button" class="btn-toggle-sign" id="elRevBtnSign" disabled onclick="toggleSign('elReverse', 'el')">±</button>
         </div>
       </div>
     </div>
-    <div class="calc-box" id="elCalc">本次即時平均：--</div>
+    <div class="calc-box" id="elCalc" onclick="toggleEditMode('el')">🔒 數據修正 (點擊解鎖) | 本次平均：--</div>
   </div>
 
   <button class="btn-submit" id="submitBtn" onclick="submitData()">儲存並傳送紀錄</button>
   
-  <!-- 最下方新增按鈕 -->
+  <!-- 今日數據按鈕 -->
   <button class="btn-view-today" onclick="openTodayModal()">📊 今日紀錄數據總覽 (B01-B12)</button>
 
   <!-- 今日數據 Modal 彈出視窗 -->
@@ -388,20 +406,20 @@
         <div class="modal-title">今日紀錄數據與誤差總覽</div>
         <button class="btn-close" onclick="closeTodayModal()">關閉</button>
       </div>
-      <div class="modal-body" id="todayModalBody">
-        <!-- 今日數據會自動產生於此 -->
-      </div>
+      <div class="modal-body" id="todayModalBody"></div>
     </div>
   </div>
 
   <script>
     // ⚠️ 請填入您 Apps Script 部署發布後的 Web App URL
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwI4rmeNP189PYLOsIWhdxc_ZAqxN3So-72S-C3NEnJCmz-Vq_Zc4TvvvHN8Y89sOrQ/exec";
+    const GAS_URL = "YOUR_APPS_SCRIPT_URL_HERE";
 
     let currentPoint = "B01";
     let allData = [];
+    
+    // 紀錄各欄位是否處於解鎖可修改狀態
+    let editStates = { e: false, n: false, el: false };
 
-    // 初始化 B01 - B12 按鈕
     function initButtons() {
       const grid = document.getElementById("pointButtons");
       for (let i = 1; i <= 12; i++) {
@@ -414,19 +432,21 @@
       }
     }
 
-    // 切換點位 (0 秒響應)
     function selectPoint(pId) {
       currentPoint = pId;
       document.querySelectorAll(".btn-point").forEach(btn => {
         btn.classList.toggle("active", btn.textContent === pId);
       });
       document.getElementById("currentPointTitle").textContent = `目前點位：${pId}`;
-      clearInputs();
+      
+      // 切換點位時，預設將各項重設為鎖定狀態
+      editStates = { e: false, n: false, el: false };
+      
       renderPointData();
     }
 
-    // 正負號切換按鈕 (±)
     function toggleSign(inputId, type) {
+      if (!editStates[type]) return; // 若未解鎖則不動作
       const input = document.getElementById(inputId);
       let val = input.value.trim();
       if (!val) return;
@@ -438,8 +458,8 @@
       updateLiveAvg(type);
     }
 
-    // 格式化輸入
     function handleInput(input, type) {
+      if (!editStates[type]) return;
       let val = input.value;
       const isNegative = val.startsWith('-');
       val = val.replace(/[^0-9.]/g, '');
@@ -454,7 +474,6 @@
       updateLiveAvg(type);
     }
 
-    // 即時計算平均值
     function updateLiveAvg(type) {
       const dVal = parseFloat(document.getElementById(`${type}Direct`).value);
       const rVal = parseFloat(document.getElementById(`${type}Reverse`).value);
@@ -471,10 +490,34 @@
         avgText = rVal.toFixed(4);
       }
 
-      document.getElementById(`${type}Calc`).textContent = `本次即時平均：${avgText}`;
+      const box = document.getElementById(`${type}Calc`);
+      if (editStates[type]) {
+        box.innerHTML = `🔓 點擊重新鎖定 | 本次平均：${avgText}`;
+      } else {
+        box.innerHTML = `🔒 數據修正 (點擊解鎖) | 本次平均：${avgText}`;
+      }
     }
 
-    // 快取優先 + 背景同步
+    // 點擊「數據修正」方塊來解鎖/上鎖
+    function toggleEditMode(type) {
+      editStates[type] = !editStates[type];
+      const isEditable = editStates[type];
+
+      const directInput = document.getElementById(`${type}Direct`);
+      const reverseInput = document.getElementById(`${type}Reverse`);
+      const btnSign1 = document.getElementById(`${type}BtnSign`);
+      const btnSign2 = document.getElementById(`${type}RevBtnSign`);
+      const box = document.getElementById(`${type}Calc`);
+
+      directInput.disabled = !isEditable;
+      reverseInput.disabled = !isEditable;
+      btnSign1.disabled = !isEditable;
+      btnSign2.disabled = !isEditable;
+
+      box.classList.toggle("editable", isEditable);
+      updateLiveAvg(type);
+    }
+
     function loadData() {
       const cached = localStorage.getItem("point_sheet_data");
       if (cached) {
@@ -496,7 +539,6 @@
         .catch(err => console.error("背景同步失敗:", err));
     }
 
-    // 時間格式化工具
     function formatDate(timeStr) {
       if (!timeStr || timeStr === "--") return "--";
       const d = new Date(timeStr);
@@ -510,14 +552,24 @@
       return `${month}/${date} ${hours}:${minutes}`;
     }
 
-    // 渲染卡片頁面
+    // 渲染卡片與「偵測今天是否已輸入過」
     function renderPointData() {
       const pointRecords = allData.filter(row => String(row[1]).trim() === currentPoint);
+      const todayStr = new Date().toDateString();
+
+      // 檢查今天是否有輸入過紀錄
+      const todayRecords = pointRecords.filter(row => {
+        const d = new Date(row[0]);
+        return !isNaN(d.getTime()) && d.toDateString() === todayStr;
+      });
 
       if (pointRecords.length === 0) {
         setVal("eOrig", "--"); setVal("eLastTime", "--"); setVal("eLastAvg", "--"); setVal("eLastDetails", "--");
         setVal("nOrig", "--"); setVal("nLastTime", "--"); setVal("nLastAvg", "--"); setVal("nLastDetails", "--");
         setVal("elOrig", "--"); setVal("elLastTime", "--"); setVal("elLastAvg", "--"); setVal("elLastDetails", "--");
+        
+        // 若完全沒資料，預設解鎖讓使用者輸入
+        unlockByDefault();
         return;
       }
 
@@ -540,13 +592,58 @@
       setVal("elLastTime", formattedTime);
       setVal("elLastAvg", last[4] || "--");
       setVal("elLastDetails", `正:${last[9] || '--'} / 倒:${last[10] || '--'}`);
+
+      // 🔥 關鍵邏輯：若「今天」已經輸入過，自動代入數值並鎖定灰階；若無則解鎖
+      if (todayRecords.length > 0) {
+        const todayLast = todayRecords[todayRecords.length - 1];
+        
+        // 代入 E
+        setInputValueAndLock('e', todayLast[5], todayLast[6], todayLast[2]);
+        // 代入 N
+        setInputValueAndLock('n', todayLast[7], todayLast[8], todayLast[3]);
+        // 代入 EL
+        setInputValueAndLock('el', todayLast[9], todayLast[10], todayLast[4]);
+      } else {
+        unlockByDefault();
+      }
+    }
+
+    function setInputValueAndLock(type, directVal, reverseVal, avgVal) {
+      document.getElementById(`${type}Direct`).value = directVal || "";
+      document.getElementById(`${type}Reverse`).value = reverseVal || "";
+      
+      editStates[type] = false; // 鎖定
+      document.getElementById(`${type}Direct`).disabled = true;
+      document.getElementById(`${type}Reverse`).disabled = true;
+      document.getElementById(`${type}BtnSign`).disabled = true;
+      document.getElementById(`${type}RevBtnSign`).disabled = true;
+
+      const box = document.getElementById(`${type}Calc`);
+      box.classList.remove("editable");
+      box.innerHTML = `🔒 數據修正 (點擊解鎖) | 今日已輸入 (平均：${avgVal || '--'})`;
+    }
+
+    function unlockByDefault() {
+      ['e', 'n', 'el'].forEach(type => {
+        document.getElementById(`${type}Direct`).value = "";
+        document.getElementById(`${type}Reverse`).value = "";
+        
+        editStates[type] = true; // 預設解鎖讓使用者新輸入
+        document.getElementById(`${type}Direct`).disabled = false;
+        document.getElementById(`${type}Reverse`).disabled = false;
+        document.getElementById(`${type}BtnSign`).disabled = false;
+        document.getElementById(`${type}RevBtnSign`).disabled = false;
+
+        const box = document.getElementById(`${type}Calc`);
+        box.classList.add("editable");
+        box.innerHTML = `🔓 點擊重新鎖定 | 本次平均：--`;
+      });
     }
 
     function setVal(id, text) { 
       document.getElementById(id).textContent = text; 
     }
 
-    // 樂觀更新 (0 秒上傳體驗)
     function submitData() {
       const eDirect = document.getElementById("eDirect").value;
       const eReverse = document.getElementById("eReverse").value;
@@ -578,7 +675,6 @@
       localStorage.setItem("point_sheet_data", JSON.stringify(allData));
       
       renderPointData();
-      clearInputs();
 
       const btn = document.getElementById("submitBtn");
       btn.disabled = true;
@@ -602,17 +698,8 @@
       });
     }
 
-    function clearInputs() {
-      ["eDirect","eReverse","nDirect","nReverse","elDirect","elReverse"].forEach(id => {
-        document.getElementById(id).value = "";
-      });
-      ["eCalc","nCalc","elCalc"].forEach(id => {
-        document.getElementById(id).textContent = "本次即時平均：--";
-      });
-    }
-
     // ==========================================
-    // 📊 今日紀錄數據總覽 (B01-B12) 彈出視窗邏輯
+    // 📊 今日數據總覽 Modal
     // ==========================================
 
     function openTodayModal() {
@@ -624,7 +711,6 @@
       document.getElementById("todayModal").style.display = "none";
     }
 
-    // 計算偏差差值 (帶正負號與樣式)
     function calcDiffHTML(valCurr, valRef) {
       const numC = parseFloat(valCurr);
       const numR = parseFloat(valRef);
@@ -647,7 +733,7 @@
       const container = document.getElementById("todayModalBody");
       container.innerHTML = "";
 
-      const todayStr = new Date().toDateString(); // 取得今天 Date 字串
+      const todayStr = new Date().toDateString();
 
       for (let i = 1; i <= 12; i++) {
         const pId = "B" + String(i).padStart(2, '0');
@@ -655,16 +741,13 @@
 
         if (pointRecords.length === 0) continue;
 
-        // 原始數據 (第一筆)
         const origRow = pointRecords[0];
 
-        // 篩選出「今天」的記錄
         const todayRecords = pointRecords.filter(row => {
           const d = new Date(row[0]);
           return !isNaN(d.getTime()) && d.toDateString() === todayStr;
         });
 
-        // 如果今天完全沒有數據
         if (todayRecords.length === 0) {
           container.innerHTML += `
             <div class="today-card">
@@ -677,18 +760,15 @@
           continue;
         }
 
-        // 今日最新一筆數據
         const todayLastRow = todayRecords[todayRecords.length - 1];
         const todayTime = formatDate(todayLastRow[0]);
 
-        // 尋找「今日之前」的最新數據 (作為上次值)
         const previousRecords = pointRecords.filter(row => {
           const d = new Date(row[0]);
           return !isNaN(d.getTime()) && d.toDateString() !== todayStr && d < new Date(todayLastRow[0]);
         });
         const lastRow = previousRecords.length > 0 ? previousRecords[previousRecords.length - 1] : null;
 
-        // 產生表格 HTML
         let tableHTML = `
           <div class="today-card">
             <div class="today-card-title">
@@ -701,9 +781,9 @@
                   <th>項目</th>
                   <th>今日平均</th>
                   <th>原始值</th>
-                  <th>$\Delta$ 原始</th>
+                  <th>Δ 原始</th>
                   <th>上次值</th>
-                  <th>$\Delta$ 上次</th>
+                  <th>Δ 上次</th>
                 </tr>
               </thead>
               <tbody>
