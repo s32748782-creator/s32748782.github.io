@@ -243,9 +243,7 @@
     }
 
     .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      text-align: center;
       border-bottom: 2px solid #007bff;
       padding-bottom: 8px;
       margin-bottom: 8px;
@@ -257,15 +255,18 @@
       color: #007bff;
     }
 
-    .btn-close {
+    /* 置底關閉按鈕 */
+    .btn-close-bottom {
+      width: 100%;
       background: #dc3545;
       color: white;
       border: none;
-      padding: 5px 10px;
-      font-size: 13px;
-      border-radius: 4px;
+      padding: 12px;
+      font-size: 15px;
+      border-radius: 6px;
       cursor: pointer;
       font-weight: bold;
+      margin-top: 8px;
     }
 
     .modal-body {
@@ -299,37 +300,46 @@
       font-weight: normal;
     }
 
-    /* 固定寬度與排版的表格樣式 */
+    /* 表格樣式（數字靠右對齊後置中效果） */
     .today-table {
       width: 100%;
       border-collapse: collapse;
-      table-layout: fixed; /* 🔥 固定欄寬 */
+      table-layout: fixed;
     }
 
     .today-table th, .today-table td {
       border: 1px solid #ced4da;
-      padding: 4px 1px;
-      text-align: center;
+      padding: 4px 2px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace; /* 等寬字體讓數字對齊不擠壓 */
+      font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
       font-size: 10px;
     }
 
+    /* 欄位標題保持置中 */
     .today-table th {
       background: #e9ecef;
       color: #495057;
       font-weight: bold;
+      text-align: center;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       font-size: 10.5px;
     }
 
-    /* 🔥 精準配置欄寬比例：
-       項目極小 (7%)
-       今日平均/原始值/上次值可容納 000.0000 寬度 (各 21%)
-       Δ 原始/Δ 上次只需容納 0.0000 寬度 (各 15%)
-    */
+    /* 🔥 數據列：靠右對齊搭配右側 Padding，達到「靠右對齊後整體置中」的完美對齊感 */
+    .today-table td {
+      text-align: right;
+      padding-right: 6px;
+    }
+
+    /* 項 (E, N, EL) 保持置中 */
+    .today-table td.cell-item {
+      text-align: center;
+      padding-right: 2px;
+    }
+
+    /* 欄寬比例 */
     .col-item { width: 7%; }  
     .col-avg  { width: 21%; } 
     .col-orig { width: 21%; } 
@@ -436,20 +446,20 @@
   <!-- 今日數據按鈕 -->
   <button class="btn-view-today" onclick="openTodayModal()">📊 今日紀錄數據總覽 (B01-B12)</button>
 
-  <!-- 今日數據 Modal 彈出視窗 -->
+  <!-- 今日數據 Modal 彈出視窗 (關閉按鈕置底) -->
   <div class="modal-overlay" id="todayModal">
     <div class="modal-content">
       <div class="modal-header">
         <div class="modal-title">今日紀錄數據與誤差總覽</div>
-        <button class="btn-close" onclick="closeTodayModal()">關閉</button>
       </div>
       <div class="modal-body" id="todayModalBody"></div>
+      <button class="btn-close-bottom" onclick="closeTodayModal()">關閉總覽</button>
     </div>
   </div>
 
   <script>
     // ⚠️ 請填入您 Apps Script 部署發布後的 Web App URL
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbz5CvpJ8u8LLWk8Jsyhy-LTLiyYV4b2YBjCh5Jgbj7Ieyrpe7U1xZOOuKeNhlV_WLOv/exec";
+    const GAS_URL = "YOUR_APPS_SCRIPT_URL_HERE";
 
     let currentPoint = "B01";
     let allData = [];
@@ -860,7 +870,7 @@
               </thead>
               <tbody>
                 <tr>
-                  <td><b>E</b></td>
+                  <td class="cell-item"><b>E</b></td>
                   <td>${to4Decimal(todayLastRow[2])}</td>
                   <td>${to4Decimal(origRow[2])}</td>
                   ${calcDiffHTML(todayLastRow[2], origRow[2])}
@@ -868,7 +878,7 @@
                   ${lastRow ? calcDiffHTML(todayLastRow[2], lastRow[2]) : '<td>--</td>'}
                 </tr>
                 <tr>
-                  <td><b>N</b></td>
+                  <td class="cell-item"><b>N</b></td>
                   <td>${to4Decimal(todayLastRow[3])}</td>
                   <td>${to4Decimal(origRow[3])}</td>
                   ${calcDiffHTML(todayLastRow[3], origRow[3])}
@@ -876,7 +886,7 @@
                   ${lastRow ? calcDiffHTML(todayLastRow[3], lastRow[3]) : '<td>--</td>'}
                 </tr>
                 <tr>
-                  <td><b>EL</b></td>
+                  <td class="cell-item"><b>EL</b></td>
                   <td>${to4Decimal(todayLastRow[4])}</td>
                   <td>${to4Decimal(origRow[4])}</td>
                   ${calcDiffHTML(todayLastRow[4], origRow[4])}
