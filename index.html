@@ -352,14 +352,14 @@
       <div class="input-field">
         <label>正鏡</label>
         <div class="input-wrapper">
-          <input type="text" id="eDirect" inputmode="decimal" placeholder="0.0" oninput="handleInput(this, 'e')">
+          <input type="text" id="eDirect" inputmode="decimal" placeholder="0.0000" oninput="handleInput(this, 'e')">
           <button type="button" class="btn-toggle-sign" id="eBtnSign" onclick="toggleSign('eDirect', 'e')">±</button>
         </div>
       </div>
       <div class="input-field">
         <label>倒鏡</label>
         <div class="input-wrapper">
-          <input type="text" id="eReverse" inputmode="decimal" placeholder="0.0" oninput="handleInput(this, 'e')">
+          <input type="text" id="eReverse" inputmode="decimal" placeholder="0.0000" oninput="handleInput(this, 'e')">
           <button type="button" class="btn-toggle-sign" id="eRevBtnSign" onclick="toggleSign('eReverse', 'e')">±</button>
         </div>
       </div>
@@ -379,14 +379,14 @@
       <div class="input-field">
         <label>正鏡</label>
         <div class="input-wrapper">
-          <input type="text" id="nDirect" inputmode="decimal" placeholder="0.0" oninput="handleInput(this, 'n')">
+          <input type="text" id="nDirect" inputmode="decimal" placeholder="0.0000" oninput="handleInput(this, 'n')">
           <button type="button" class="btn-toggle-sign" id="nBtnSign" onclick="toggleSign('nDirect', 'n')">±</button>
         </div>
       </div>
       <div class="input-field">
         <label>倒鏡</label>
         <div class="input-wrapper">
-          <input type="text" id="nReverse" inputmode="decimal" placeholder="0.0" oninput="handleInput(this, 'n')">
+          <input type="text" id="nReverse" inputmode="decimal" placeholder="0.0000" oninput="handleInput(this, 'n')">
           <button type="button" class="btn-toggle-sign" id="nRevBtnSign" onclick="toggleSign('nReverse', 'n')">±</button>
         </div>
       </div>
@@ -406,14 +406,14 @@
       <div class="input-field">
         <label>正鏡</label>
         <div class="input-wrapper">
-          <input type="text" id="elDirect" inputmode="decimal" placeholder="0.0" oninput="handleInput(this, 'el')">
+          <input type="text" id="elDirect" inputmode="decimal" placeholder="0.0000" oninput="handleInput(this, 'el')">
           <button type="button" class="btn-toggle-sign" id="elBtnSign" onclick="toggleSign('elDirect', 'el')">±</button>
         </div>
       </div>
       <div class="input-field">
         <label>倒鏡</label>
         <div class="input-wrapper">
-          <input type="text" id="elReverse" inputmode="decimal" placeholder="0.0" oninput="handleInput(this, 'el')">
+          <input type="text" id="elReverse" inputmode="decimal" placeholder="0.0000" oninput="handleInput(this, 'el')">
           <button type="button" class="btn-toggle-sign" id="elRevBtnSign" onclick="toggleSign('elReverse', 'el')">±</button>
         </div>
       </div>
@@ -449,6 +449,13 @@
       n: { hasEnteredToday: false, isUnlocked: false },
       el: { hasEnteredToday: false, isUnlocked: false }
     };
+
+    // 🔥 全域小數點 4 位格式化輔助函式
+    function to4Decimal(val) {
+      if (val === undefined || val === null || val === "" || val === "--") return "--";
+      const num = parseFloat(val);
+      return isNaN(num) ? "--" : num.toFixed(4);
+    }
 
     function initButtons() {
       const grid = document.getElementById("pointButtons");
@@ -601,13 +608,11 @@
       const pointRecords = allData.filter(row => String(row[1]).trim() === currentPoint);
       const todayStr = new Date().toDateString();
 
-      // 1. 篩選今日紀錄
       const todayRecords = pointRecords.filter(row => {
         const d = new Date(row[0]);
         return !isNaN(d.getTime()) && d.toDateString() === todayStr;
       });
 
-      // 2. 篩選非今日（今天以前）的歷史紀錄
       const pastRecords = pointRecords.filter(row => {
         const d = new Date(row[0]);
         return !isNaN(d.getTime()) && d.toDateString() !== todayStr;
@@ -622,26 +627,25 @@
         return;
       }
 
-      // 原始數據 (第一筆)
+      // 原始數據 (第一筆) -> 轉為 4 位小數
       const first = pointRecords[0];
-      setVal("eOrig", first[2] || "--");
-      setVal("nOrig", first[3] || "--");
-      setVal("elOrig", first[4] || "--");
+      setVal("eOrig", to4Decimal(first[2]));
+      setVal("nOrig", to4Decimal(first[3]));
+      setVal("elOrig", to4Decimal(first[4]));
 
-      // 「上次數據」一律對應為「非今日」的最新紀錄 (Past Record)
+      // 「上次數據」對應非今日的最新紀錄 -> 轉為 4 位小數
       const lastPast = pastRecords.length > 0 ? pastRecords[pastRecords.length - 1] : null;
 
-      // E
-      setVal("eLastAvg", lastPast ? (lastPast[2] || "--") : "--");
-      setVal("eLastDetails", lastPast ? `正:${lastPast[5] || '--'} / 倒:${lastPast[6] || '--'}` : "--");
-      // N
-      setVal("nLastAvg", lastPast ? (lastPast[3] || "--") : "--");
-      setVal("nLastDetails", lastPast ? `正:${lastPast[7] || '--'} / 倒:${lastPast[8] || '--'}` : "--");
-      // EL
-      setVal("elLastAvg", lastPast ? (lastPast[4] || "--") : "--");
-      setVal("elLastDetails", lastPast ? `正:${lastPast[9] || '--'} / 倒:${lastPast[10] || '--'}` : "--");
+      setVal("eLastAvg", lastPast ? to4Decimal(lastPast[2]) : "--");
+      setVal("eLastDetails", lastPast ? `正:${to4Decimal(lastPast[5])} / 倒:${to4Decimal(lastPast[6])}` : "--");
 
-      // 「紀錄時間」：若今天已輸入，顯示今日紀錄時間；否則顯示非今日的最新時間
+      setVal("nLastAvg", lastPast ? to4Decimal(lastPast[3]) : "--");
+      setVal("nLastDetails", lastPast ? `正:${to4Decimal(lastPast[7])} / 倒:${to4Decimal(lastPast[8])}` : "--");
+
+      setVal("elLastAvg", lastPast ? to4Decimal(lastPast[4]) : "--");
+      setVal("elLastDetails", lastPast ? `正:${to4Decimal(lastPast[9])} / 倒:${to4Decimal(lastPast[10])}` : "--");
+
+      // 「紀錄時間」與今日鎖定設定
       if (todayRecords.length > 0) {
         const todayLast = todayRecords[todayRecords.length - 1];
         const formattedTime = formatDate(todayLast[0]);
@@ -664,8 +668,8 @@
     }
 
     function setupTodayEntered(type, directVal, reverseVal) {
-      document.getElementById(`${type}Direct`).value = directVal || "";
-      document.getElementById(`${type}Reverse`).value = reverseVal || "";
+      document.getElementById(`${type}Direct`).value = directVal !== "" && directVal !== undefined ? to4Decimal(directVal) : "";
+      document.getElementById(`${type}Reverse`).value = reverseVal !== "" && reverseVal !== undefined ? to4Decimal(reverseVal) : "";
       
       itemStates[type] = {
         hasEnteredToday: true,
@@ -719,7 +723,6 @@
         eDirect, eReverse, nDirect, nReverse, elDirect, elReverse
       ];
 
-      // 檢查本地是否已有今日紀錄
       let todayIndex = -1;
       for (let i = allData.length - 1; i >= 0; i--) {
         const d = new Date(allData[i][0]);
@@ -730,9 +733,9 @@
       }
 
       if (todayIndex > -1) {
-        allData[todayIndex] = newRow; // 覆蓋今日紀錄
+        allData[todayIndex] = newRow;
       } else {
-        allData.push(newRow); // 新增紀錄
+        allData.push(newRow);
       }
 
       localStorage.setItem("point_sheet_data", JSON.stringify(allData));
@@ -852,26 +855,26 @@
               <tbody>
                 <tr>
                   <td><b>E</b></td>
-                  <td>${todayLastRow[2] || '--'}</td>
-                  <td>${origRow[2] || '--'}</td>
+                  <td>${to4Decimal(todayLastRow[2])}</td>
+                  <td>${to4Decimal(origRow[2])}</td>
                   ${calcDiffHTML(todayLastRow[2], origRow[2])}
-                  <td>${lastRow ? (lastRow[2] || '--') : '--'}</td>
+                  <td>${lastRow ? to4Decimal(lastRow[2]) : '--'}</td>
                   ${lastRow ? calcDiffHTML(todayLastRow[2], lastRow[2]) : '<td>--</td>'}
                 </tr>
                 <tr>
                   <td><b>N</b></td>
-                  <td>${todayLastRow[3] || '--'}</td>
-                  <td>${origRow[3] || '--'}</td>
+                  <td>${to4Decimal(todayLastRow[3])}</td>
+                  <td>${to4Decimal(origRow[3])}</td>
                   ${calcDiffHTML(todayLastRow[3], origRow[3])}
-                  <td>${lastRow ? (lastRow[3] || '--') : '--'}</td>
+                  <td>${lastRow ? to4Decimal(lastRow[3]) : '--'}</td>
                   ${lastRow ? calcDiffHTML(todayLastRow[3], lastRow[3]) : '<td>--</td>'}
                 </tr>
                 <tr>
                   <td><b>EL</b></td>
-                  <td>${todayLastRow[4] || '--'}</td>
-                  <td>${origRow[4] || '--'}</td>
+                  <td>${to4Decimal(todayLastRow[4])}</td>
+                  <td>${to4Decimal(origRow[4])}</td>
                   ${calcDiffHTML(todayLastRow[4], origRow[4])}
-                  <td>${lastRow ? (lastRow[4] || '--') : '--'}</td>
+                  <td>${lastRow ? to4Decimal(lastRow[4]) : '--'}</td>
                   ${lastRow ? calcDiffHTML(todayLastRow[4], lastRow[4]) : '<td>--</td>'}
                 </tr>
               </tbody>
