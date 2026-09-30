@@ -31,7 +31,8 @@
 
     /* 手機客製化數字鍵盤 */
     #keypad { position: fixed; bottom: 0; left: 0; right: 0; background: #d1d5db; padding: 10px; display: none; grid-template-columns: repeat(3, 1fr); gap: 8px; box-shadow: 0 -2px 10px rgba(0,0,0,0.2); z-index: 1000; }
-    .key { background: white; border: none; padding: 15px; font-size: 20px; font-weight: bold; border-radius: 6px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.2); active { background: #e5e7eb; } }
+    .key { background: white; border: none; padding: 15px; font-size: 20px; font-weight: bold; border-radius: 6px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+    .key:active { background: #e5e7eb; }
     .key-action { background: #9ca3af; color: white; }
     .key-done { background: #007bff; color: white; grid-column: span 3; }
   </style>
@@ -97,8 +98,8 @@
   </div>
 
   <script>
-    // ⚠️️ 替換為你的 Google Apps Script URL
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbz1BifVeE1uAxDhpDxxgCyEcmMTZGDc4EZWEVPCpslTVvEq_zl9ud_LvVTtnG3HckVn/exec";
+    // ⚠️ 請替換為你的 Google Apps Script URL
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbz-Tqr4RAMYXP8u2sHKQm8FSkF_yYLXfuZwBGJdrahYDS8uBlLWvfQGuc4wR81dpEYn/exec";
 
     let currentPoint = "B01";
     let allData = [];
@@ -128,7 +129,7 @@
       renderPointData();
     }
 
-    // 讀取並分類試算表資料
+    // 讀取試算表資料
     function loadData() {
       fetch(GAS_URL)
         .then(res => res.json())
@@ -139,10 +140,10 @@
         .catch(err => console.error("讀取失敗", err));
     }
 
-    // 渲染特定點位的「原始數據」與「上次數據」
+    // 依據 A~K 欄順序讀取並顯示「原始數據」與「上次數據」
     function renderPointData() {
-      // 篩選出該點位的所有記錄 (row[1] 為點位名稱)
-      const pointRecords = allData.filter(row => row[1] === currentPoint);
+      // 篩選出目前點位 (row[1] 為 B欄: 編號)
+      const pointRecords = allData.filter(row => String(row[1]).trim() === currentPoint);
 
       if (pointRecords.length === 0) {
         setVal("eOrig", "--"); setVal("eLast", "--");
@@ -151,23 +152,22 @@
         return;
       }
 
-      // 第一筆作為原始數據
+      // 第一筆紀錄 (原始數據) - F/G欄為E正倒, H/I欄為N正倒, J/K欄為EL正倒
       const first = pointRecords[0];
-      // 第一筆紀錄格式：[時間, 點位, E正, E倒, N正, N倒, EL正, EL倒]
-      setVal("eOrig", `正:${first[2]} / 倒:${first[3]}`);
-      setVal("nOrig", `正:${first[4]} / 倒:${first[5]}`);
-      setVal("elOrig", `正:${first[6]} / 倒:${first[7]}`);
+      setVal("eOrig", `正:${first[5] || '--'} / 倒:${first[6] || '--'}`);
+      setVal("nOrig", `正:${first[7] || '--'} / 倒:${first[8] || '--'}`);
+      setVal("elOrig", `正:${first[9] || '--'} / 倒:${first[10] || '--'}`);
 
-      // 最後一筆作為上次數據
+      // 最後一筆紀錄 (上次數據)
       const last = pointRecords[pointRecords.length - 1];
-      setVal("eLast", `正:${last[2]} / 倒:${last[3]}`);
-      setVal("nLast", `正:${last[4]} / 倒:${last[5]}`);
-      setVal("elLast", `正:${last[6]} / 倒:${last[7]}`);
+      setVal("eLast", `正:${last[5] || '--'} / 倒:${last[6] || '--'}`);
+      setVal("nLast", `正:${last[7] || '--'} / 倒:${last[8] || '--'}`);
+      setVal("elLast", `正:${last[9] || '--'} / 倒:${last[10] || '--'}`);
     }
 
     function setVal(id, text) { document.getElementById(id).textContent = text; }
 
-    // 送出本次數據
+    // 送出資料
     function submitData() {
       const payload = {
         pointId: currentPoint,
@@ -193,7 +193,7 @@
         alert(`${currentPoint} 資料儲存成功！`);
         clearInputs();
         closeKeypad();
-        loadData(); // 重新載入最新資料
+        loadData(); // 重新整理最新數據
       })
       .catch(err => alert("失敗：" + err))
       .finally(() => {
@@ -208,7 +208,7 @@
       });
     }
 
-    /* --- 虛擬數字鍵盤邏輯 --- */
+    /* 數字鍵盤控制邏輯 */
     function openKeypad(inputElem) {
       activeInput = inputElem;
       document.getElementById("keypad").style.display = "grid";
@@ -225,7 +225,6 @@
       if (key === 'back') {
         activeInput.value = activeInput.value.slice(0, -1);
       } else {
-        // 防止重複小數點
         if (key === '.' && activeInput.value.includes('.')) return;
         activeInput.value += key;
       }
