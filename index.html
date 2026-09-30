@@ -6,7 +6,7 @@
   <title>點位數據紀錄系統</title>
   <style>
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: #f4f6f8; margin: 0; padding: 10px; padding-bottom: 260px; }
+    body { background-color: #f4f6f8; margin: 0; padding: 10px 15px 30px 15px; }
     
     /* 12個按鈕網格 */
     .btn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
@@ -24,17 +24,10 @@
     .input-group { display: flex; gap: 8px; margin-top: 8px; }
     .input-field { flex: 1; display: flex; flex-direction: column; }
     .input-field label { font-size: 12px; color: #555; margin-bottom: 4px; }
-    .input-field input { padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; text-align: center; background: #fff; }
+    .input-field input { padding: 12px; font-size: 18px; border: 1px solid #ccc; border-radius: 4px; text-align: center; background: #fff; }
     .input-field input:focus { border-color: #007bff; outline: none; background: #eef6ff; }
 
     .btn-submit { width: 100%; padding: 14px; font-size: 18px; font-weight: bold; background: #28a745; color: white; border: none; border-radius: 6px; margin-top: 10px; }
-
-    /* 手機客製化數字鍵盤 */
-    #keypad { position: fixed; bottom: 0; left: 0; right: 0; background: #d1d5db; padding: 10px; display: none; grid-template-columns: repeat(3, 1fr); gap: 8px; box-shadow: 0 -2px 10px rgba(0,0,0,0.2); z-index: 1000; }
-    .key { background: white; border: none; padding: 15px; font-size: 20px; font-weight: bold; border-radius: 6px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
-    .key:active { background: #e5e7eb; }
-    .key-action { background: #9ca3af; color: white; }
-    .key-done { background: #007bff; color: white; grid-column: span 3; }
   </style>
 </head>
 <body>
@@ -51,8 +44,8 @@
     <div class="data-row"><span class="data-label">上次數據:</span> <span class="data-val" id="eLast">--</span></div>
     <div class="data-row"><span class="data-label">原始數據:</span> <span class="data-val" id="eOrig">--</span></div>
     <div class="input-group">
-      <div class="input-field"><label>正鏡</label><input type="text" id="eDirect" readonly onclick="openKeypad(this)"></div>
-      <div class="input-field"><label>倒鏡</label><input type="text" id="eReverse" readonly onclick="openKeypad(this)"></div>
+      <div class="input-field"><label>正鏡</label><input type="text" id="eDirect" inputmode="decimal" pattern="[0-9.]*" placeholder="0.0" oninput="filterInput(this)"></div>
+      <div class="input-field"><label>倒鏡</label><input type="text" id="eReverse" inputmode="decimal" pattern="[0-9.]*" placeholder="0.0" oninput="filterInput(this)"></div>
     </div>
   </div>
 
@@ -62,8 +55,8 @@
     <div class="data-row"><span class="data-label">上次數據:</span> <span class="data-val" id="nLast">--</span></div>
     <div class="data-row"><span class="data-label">原始數據:</span> <span class="data-val" id="nOrig">--</span></div>
     <div class="input-group">
-      <div class="input-field"><label>正鏡</label><input type="text" id="nDirect" readonly onclick="openKeypad(this)"></div>
-      <div class="input-field"><label>倒鏡</label><input type="text" id="nReverse" readonly onclick="openKeypad(this)"></div>
+      <div class="input-field"><label>正鏡</label><input type="text" id="nDirect" inputmode="decimal" pattern="[0-9.]*" placeholder="0.0" oninput="filterInput(this)"></div>
+      <div class="input-field"><label>倒鏡</label><input type="text" id="nReverse" inputmode="decimal" pattern="[0-9.]*" placeholder="0.0" oninput="filterInput(this)"></div>
     </div>
   </div>
 
@@ -73,29 +66,12 @@
     <div class="data-row"><span class="data-label">上次數據:</span> <span class="data-val" id="elLast">--</span></div>
     <div class="data-row"><span class="data-label">原始數據:</span> <span class="data-val" id="elOrig">--</span></div>
     <div class="input-group">
-      <div class="input-field"><label>正鏡</label><input type="text" id="elDirect" readonly onclick="openKeypad(this)"></div>
-      <div class="input-field"><label>倒鏡</label><input type="text" id="elReverse" readonly onclick="openKeypad(this)"></div>
+      <div class="input-field"><label>正鏡</label><input type="text" id="elDirect" inputmode="decimal" pattern="[0-9.]*" placeholder="0.0" oninput="filterInput(this)"></div>
+      <div class="input-field"><label>倒鏡</label><input type="text" id="elReverse" inputmode="decimal" pattern="[0-9.]*" placeholder="0.0" oninput="filterInput(this)"></div>
     </div>
   </div>
 
   <button class="btn-submit" id="submitBtn" onclick="submitData()">儲存並傳送紀錄</button>
-
-  <!-- 虛擬數字鍵盤 -->
-  <div id="keypad">
-    <button class="key" onclick="pressKey('1')">1</button>
-    <button class="key" onclick="pressKey('2')">2</button>
-    <button class="key" onclick="pressKey('3')">3</button>
-    <button class="key" onclick="pressKey('4')">4</button>
-    <button class="key" onclick="pressKey('5')">5</button>
-    <button class="key" onclick="pressKey('6')">6</button>
-    <button class="key" onclick="pressKey('7')">7</button>
-    <button class="key" onclick="pressKey('8')">8</button>
-    <button class="key" onclick="pressKey('9')">9</button>
-    <button class="key" onclick="pressKey('.')">.</button>
-    <button class="key" onclick="pressKey('0')">0</button>
-    <button class="key key-action" onclick="pressKey('back')">⌫</button>
-    <button class="key key-done" onclick="closeKeypad()">完成</button>
-  </div>
 
   <script>
     // ⚠️ 請替換為你的 Google Apps Script URL
@@ -103,7 +79,6 @@
 
     let currentPoint = "B01";
     let allData = [];
-    let activeInput = null;
 
     // 初始化建置 B01-B12 按鈕
     function initButtons() {
@@ -129,6 +104,20 @@
       renderPointData();
     }
 
+    // 限制輸入框只允許 0-9 與最多一個小數點
+    function filterInput(input) {
+      // 1. 先清除非數字與小數點的字元
+      let val = input.value.replace(/[^0-9.]/g, '');
+      
+      // 2. 避免輸入多個小數點 (只保留第一個小數點)
+      const parts = val.split('.');
+      if (parts.length > 2) {
+        val = parts[0] + '.' + parts.slice(1).join('');
+      }
+      
+      input.value = val;
+    }
+
     // 讀取試算表資料
     function loadData() {
       fetch(GAS_URL)
@@ -142,7 +131,6 @@
 
     // 依據 A~K 欄順序讀取並顯示「原始數據」與「上次數據」
     function renderPointData() {
-      // 篩選出目前點位 (row[1] 為 B欄: 編號)
       const pointRecords = allData.filter(row => String(row[1]).trim() === currentPoint);
 
       if (pointRecords.length === 0) {
@@ -152,7 +140,7 @@
         return;
       }
 
-      // 第一筆紀錄 (原始數據) - F/G欄為E正倒, H/I欄為N正倒, J/K欄為EL正倒
+      // 第一筆紀錄 (原始數據) - F/G: E正/倒, H/I: N正/倒, J/K: EL正/倒
       const first = pointRecords[0];
       setVal("eOrig", `正:${first[5] || '--'} / 倒:${first[6] || '--'}`);
       setVal("nOrig", `正:${first[7] || '--'} / 倒:${first[8] || '--'}`);
@@ -192,7 +180,6 @@
       .then(() => {
         alert(`${currentPoint} 資料儲存成功！`);
         clearInputs();
-        closeKeypad();
         loadData(); // 重新整理最新數據
       })
       .catch(err => alert("失敗：" + err))
@@ -206,28 +193,6 @@
       ["eDirect","eReverse","nDirect","nReverse","elDirect","elReverse"].forEach(id => {
         document.getElementById(id).value = "";
       });
-    }
-
-    /* 數字鍵盤控制邏輯 */
-    function openKeypad(inputElem) {
-      activeInput = inputElem;
-      document.getElementById("keypad").style.display = "grid";
-    }
-
-    function closeKeypad() {
-      document.getElementById("keypad").style.display = "none";
-      if(activeInput) activeInput.blur();
-      activeInput = null;
-    }
-
-    function pressKey(key) {
-      if (!activeInput) return;
-      if (key === 'back') {
-        activeInput.value = activeInput.value.slice(0, -1);
-      } else {
-        if (key === '.' && activeInput.value.includes('.')) return;
-        activeInput.value += key;
-      }
     }
 
     window.onload = () => {
