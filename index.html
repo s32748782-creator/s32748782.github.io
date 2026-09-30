@@ -217,7 +217,7 @@
       cursor: pointer;
     }
 
-    /* 今日數據 Modal 彈出視窗樣式 (已優化防超出頁面) */
+    /* 今日數據 Modal 彈框 */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -299,19 +299,18 @@
       font-weight: normal;
     }
 
-    /* 固定寬度與排版的表格樣式 */
     .today-table {
       width: 100%;
       border-collapse: collapse;
       font-size: 11px;
-      table-layout: fixed; /* 🔥 強制固定欄寬，不隨字元數改變 */
+      table-layout: fixed;
     }
 
     .today-table th, .today-table td {
       border: 1px solid #ced4da;
       padding: 5px 2px;
       text-align: center;
-      word-break: break-all; /* 防止長數字破壞寬度 */
+      word-break: break-all;
       overflow: hidden;
     }
 
@@ -321,7 +320,6 @@
       font-weight: bold;
     }
 
-    /* 各欄位固定寬度分配 */
     .col-item { width: 12%; }
     .col-avg  { width: 18%; }
     .col-orig { width: 17%; }
@@ -346,9 +344,9 @@
   <div class="card">
     <div class="card-title">E 數據</div>
     <div class="data-row"><span class="data-label">原始 E 數據:</span> <span class="data-val" id="eOrig">--</span></div>
-    <div class="data-row time-row"><span class="data-label">上次紀錄時間:</span> <span class="data-val time-val" id="eLastTime">--</span></div>
     <div class="data-row"><span class="data-label">上次 E 數據 (平均):</span> <span class="data-val" id="eLastAvg">--</span></div>
     <div class="data-row"><span class="data-label">上次正/倒鏡:</span> <span class="data-val" id="eLastDetails">--</span></div>
+    <div class="data-row time-row"><span class="data-label">紀錄時間:</span> <span class="data-val time-val" id="eLastTime">--</span></div>
     
     <div class="input-group">
       <div class="input-field">
@@ -373,9 +371,9 @@
   <div class="card">
     <div class="card-title">N 數據</div>
     <div class="data-row"><span class="data-label">原始 N 數據:</span> <span class="data-val" id="nOrig">--</span></div>
-    <div class="data-row time-row"><span class="data-label">上次紀錄時間:</span> <span class="data-val time-val" id="nLastTime">--</span></div>
     <div class="data-row"><span class="data-label">上次 N 數據 (平均):</span> <span class="data-val" id="nLastAvg">--</span></div>
     <div class="data-row"><span class="data-label">上次正/倒鏡:</span> <span class="data-val" id="nLastDetails">--</span></div>
+    <div class="data-row time-row"><span class="data-label">紀錄時間:</span> <span class="data-val time-val" id="nLastTime">--</span></div>
     
     <div class="input-group">
       <div class="input-field">
@@ -400,9 +398,9 @@
   <div class="card">
     <div class="card-title">EL 數據</div>
     <div class="data-row"><span class="data-label">原始 EL 數據:</span> <span class="data-val" id="elOrig">--</span></div>
-    <div class="data-row time-row"><span class="data-label">上次紀錄時間:</span> <span class="data-val time-val" id="elLastTime">--</span></div>
     <div class="data-row"><span class="data-label">上次 EL 數據 (平均):</span> <span class="data-val" id="elLastAvg">--</span></div>
     <div class="data-row"><span class="data-label">上次正/倒鏡:</span> <span class="data-val" id="elLastDetails">--</span></div>
+    <div class="data-row time-row"><span class="data-label">紀錄時間:</span> <span class="data-val time-val" id="elLastTime">--</span></div>
     
     <div class="input-group">
       <div class="input-field">
@@ -441,12 +439,11 @@
 
   <script>
     // ⚠️ 請填入您 Apps Script 部署發布後的 Web App URL
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwI4rmeNP189PYLOsIWhdxc_ZAqxN3So-72S-C3NEnJCmz-Vq_Zc4TvvvHN8Y89sOrQ/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbz5CvpJ8u8LLWk8Jsyhy-LTLiyYV4b2YBjCh5Jgbj7Ieyrpe7U1xZOOuKeNhlV_WLOv/exec";
 
     let currentPoint = "B01";
     let allData = [];
     
-    // 紀錄各欄位狀態：hasEnteredToday (今天是否輸入過), isUnlocked (解鎖修正狀態)
     let itemStates = {
       e: { hasEnteredToday: false, isUnlocked: false },
       n: { hasEnteredToday: false, isUnlocked: false },
@@ -471,7 +468,6 @@
         btn.classList.toggle("active", btn.textContent === pId);
       });
       document.getElementById("currentPointTitle").textContent = `目前點位：${pId}`;
-      
       renderPointData();
     }
 
@@ -605,9 +601,16 @@
       const pointRecords = allData.filter(row => String(row[1]).trim() === currentPoint);
       const todayStr = new Date().toDateString();
 
+      // 1. 篩選今日紀錄
       const todayRecords = pointRecords.filter(row => {
         const d = new Date(row[0]);
         return !isNaN(d.getTime()) && d.toDateString() === todayStr;
+      });
+
+      // 2. 篩選非今日（今天以前）的歷史紀錄
+      const pastRecords = pointRecords.filter(row => {
+        const d = new Date(row[0]);
+        return !isNaN(d.getTime()) && d.toDateString() !== todayStr;
       });
 
       if (pointRecords.length === 0) {
@@ -615,42 +618,48 @@
         setVal("nOrig", "--"); setVal("nLastTime", "--"); setVal("nLastAvg", "--"); setVal("nLastDetails", "--");
         setVal("elOrig", "--"); setVal("elLastTime", "--"); setVal("elLastAvg", "--"); setVal("elLastDetails", "--");
         
-        setupNewInput('e');
-        setupNewInput('n');
-        setupNewInput('el');
+        setupNewInput('e'); setupNewInput('n'); setupNewInput('el');
         return;
       }
 
+      // 原始數據 (第一筆)
       const first = pointRecords[0];
       setVal("eOrig", first[2] || "--");
       setVal("nOrig", first[3] || "--");
       setVal("elOrig", first[4] || "--");
 
-      const last = pointRecords[pointRecords.length - 1];
-      const formattedTime = formatDate(last[0]);
+      // 「上次數據」一律對應為「非今日」的最新紀錄 (Past Record)
+      const lastPast = pastRecords.length > 0 ? pastRecords[pastRecords.length - 1] : null;
 
-      setVal("eLastTime", formattedTime);
-      setVal("eLastAvg", last[2] || "--");
-      setVal("eLastDetails", `正:${last[5] || '--'} / 倒:${last[6] || '--'}`);
-      
-      setVal("nLastTime", formattedTime);
-      setVal("nLastAvg", last[3] || "--");
-      setVal("nLastDetails", `正:${last[7] || '--'} / 倒:${last[8] || '--'}`);
-      
-      setVal("elLastTime", formattedTime);
-      setVal("elLastAvg", last[4] || "--");
-      setVal("elLastDetails", `正:${last[9] || '--'} / 倒:${last[10] || '--'}`);
+      // E
+      setVal("eLastAvg", lastPast ? (lastPast[2] || "--") : "--");
+      setVal("eLastDetails", lastPast ? `正:${lastPast[5] || '--'} / 倒:${lastPast[6] || '--'}` : "--");
+      // N
+      setVal("nLastAvg", lastPast ? (lastPast[3] || "--") : "--");
+      setVal("nLastDetails", lastPast ? `正:${lastPast[7] || '--'} / 倒:${lastPast[8] || '--'}` : "--");
+      // EL
+      setVal("elLastAvg", lastPast ? (lastPast[4] || "--") : "--");
+      setVal("elLastDetails", lastPast ? `正:${lastPast[9] || '--'} / 倒:${lastPast[10] || '--'}` : "--");
 
+      // 「紀錄時間」：若今天已輸入，顯示今日紀錄時間；否則顯示非今日的最新時間
       if (todayRecords.length > 0) {
         const todayLast = todayRecords[todayRecords.length - 1];
-        
+        const formattedTime = formatDate(todayLast[0]);
+
+        setVal("eLastTime", formattedTime);
+        setVal("nLastTime", formattedTime);
+        setVal("elLastTime", formattedTime);
+
         setupTodayEntered('e', todayLast[5], todayLast[6]);
         setupTodayEntered('n', todayLast[7], todayLast[8]);
         setupTodayEntered('el', todayLast[9], todayLast[10]);
       } else {
-        setupNewInput('e');
-        setupNewInput('n');
-        setupNewInput('el');
+        const formattedPastTime = lastPast ? formatDate(lastPast[0]) : "--";
+        setVal("eLastTime", formattedPastTime);
+        setVal("nLastTime", formattedPastTime);
+        setVal("elLastTime", formattedPastTime);
+
+        setupNewInput('e'); setupNewInput('n'); setupNewInput('el');
       }
     }
 
@@ -699,6 +708,7 @@
       };
 
       const now = new Date().toISOString();
+      const todayStr = new Date().toDateString();
 
       const newRow = [
         now,
@@ -709,7 +719,22 @@
         eDirect, eReverse, nDirect, nReverse, elDirect, elReverse
       ];
 
-      allData.push(newRow);
+      // 檢查本地是否已有今日紀錄
+      let todayIndex = -1;
+      for (let i = allData.length - 1; i >= 0; i--) {
+        const d = new Date(allData[i][0]);
+        if (String(allData[i][1]).trim() === currentPoint && !isNaN(d.getTime()) && d.toDateString() === todayStr) {
+          todayIndex = i;
+          break;
+        }
+      }
+
+      if (todayIndex > -1) {
+        allData[todayIndex] = newRow; // 覆蓋今日紀錄
+      } else {
+        allData.push(newRow); // 新增紀錄
+      }
+
       localStorage.setItem("point_sheet_data", JSON.stringify(allData));
       
       renderPointData();
