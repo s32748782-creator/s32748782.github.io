@@ -98,7 +98,7 @@
       width: 100%;
     }
 
-    /* 輸入框雙欄排版（加強防溢出） */
+    /* 輸入框雙欄排版（防溢出） */
     .input-group { 
       display: flex; 
       gap: 8px; 
@@ -108,7 +108,7 @@
 
     .input-field { 
       flex: 1; 
-      min-width: 0; /* 關鍵：防止多餘內容把 input 框撐破容器 */
+      min-width: 0; /* 防止內容撐大容器 */
       display: flex; 
       flex-direction: column; 
     }
@@ -127,7 +127,7 @@
       border-radius: 4px; 
       text-align: center; 
       background: #fff; 
-      -webkit-appearance: none; /* 移除 iOS Safari 內建強加的陰影樣式 */
+      -webkit-appearance: none; /* 移除 iOS Safari 預設陰影樣式 */
     }
 
     .input-field input:focus { 
@@ -166,8 +166,8 @@
     <div class="data-row"><span class="data-label">上次正/倒鏡:</span> <span class="data-val" id="eLastDetails">--</span></div>
     
     <div class="input-group">
-      <div class="input-field"><label>正鏡</label><input type="text" id="eDirect" inputmode="decimal" pattern="[0-9.]*" placeholder="0.0" oninput="handleInput(this, 'e')"></div>
-      <div class="input-field"><label>倒鏡</label><input type="text" id="eReverse" inputmode="decimal" pattern="[0-9.]*" placeholder="0.0" oninput="handleInput(this, 'e')"></div>
+      <div class="input-field"><label>正鏡</label><input type="text" id="eDirect" inputmode="decimal" pattern="[0-9.-]*" placeholder="0.0" oninput="handleInput(this, 'e')"></div>
+      <div class="input-field"><label>倒鏡</label><input type="text" id="eReverse" inputmode="decimal" pattern="[0-9.-]*" placeholder="0.0" oninput="handleInput(this, 'e')"></div>
     </div>
     <div class="calc-box" id="eCalc">本次即時平均：--</div>
   </div>
@@ -180,8 +180,8 @@
     <div class="data-row"><span class="data-label">上次正/倒鏡:</span> <span class="data-val" id="nLastDetails">--</span></div>
     
     <div class="input-group">
-      <div class="input-field"><label>正鏡</label><input type="text" id="nDirect" inputmode="decimal" pattern="[0-9.]*" placeholder="0.0" oninput="handleInput(this, 'n')"></div>
-      <div class="input-field"><label>倒鏡</label><input type="text" id="nReverse" inputmode="decimal" pattern="[0-9.]*" placeholder="0.0" oninput="handleInput(this, 'n')"></div>
+      <div class="input-field"><label>正鏡</label><input type="text" id="nDirect" inputmode="decimal" pattern="[0-9.-]*" placeholder="0.0" oninput="handleInput(this, 'n')"></div>
+      <div class="input-field"><label>倒鏡</label><input type="text" id="nReverse" inputmode="decimal" pattern="[0-9.-]*" placeholder="0.0" oninput="handleInput(this, 'n')"></div>
     </div>
     <div class="calc-box" id="nCalc">本次即時平均：--</div>
   </div>
@@ -194,8 +194,8 @@
     <div class="data-row"><span class="data-label">上次正/倒鏡:</span> <span class="data-val" id="elLastDetails">--</span></div>
     
     <div class="input-group">
-      <div class="input-field"><label>正鏡</label><input type="text" id="elDirect" inputmode="decimal" pattern="[0-9.]*" placeholder="0.0" oninput="handleInput(this, 'el')"></div>
-      <div class="input-field"><label>倒鏡</label><input type="text" id="elReverse" inputmode="decimal" pattern="[0-9.]*" placeholder="0.0" oninput="handleInput(this, 'el')"></div>
+      <div class="input-field"><label>正鏡</label><input type="text" id="elDirect" inputmode="decimal" pattern="[0-9.-]*" placeholder="0.0" oninput="handleInput(this, 'el')"></div>
+      <div class="input-field"><label>倒鏡</label><input type="text" id="elReverse" inputmode="decimal" pattern="[0-9.-]*" placeholder="0.0" oninput="handleInput(this, 'el')"></div>
     </div>
     <div class="calc-box" id="elCalc">本次即時平均：--</div>
   </div>
@@ -204,7 +204,7 @@
 
   <script>
     // ⚠️ 請填入您 Apps Script 部署後的 Web App URL
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzQ7RZID1yqQGHjt79cvd42ZODIaC_9bTADlkFA3EbT1a_S916dRRRg2QarZUrpx18/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwKzTE_WvHJ7SNd8gHepN9MlRJLPzhVzB8QfUgty0KZ0-M7g_G3lergJfPtLu-FQb-p/exec";
 
     let currentPoint = "B01";
     let allData = [];
@@ -233,15 +233,30 @@
       renderPointData();
     }
 
-    // 過濾非數字字元 + 即時計算平均值
+    // 過濾非數字/小數點/負號字元，並實時計算平均值
     function handleInput(input, type) {
-      // 1. 強制只留 0-9 與最多一個小數點
-      let val = input.value.replace(/[^0-9.]/g, '');
+      let val = input.value;
+
+      // 1. 判斷開頭是否有負號 '-'
+      const isNegative = val.startsWith('-');
+
+      // 2. 移除非數字與小數點的字元
+      val = val.replace(/[^0-9.]/g, '');
+
+      // 3. 確保全字串最多只有一個小數點
       const parts = val.split('.');
-      if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
+      if (parts.length > 2) {
+        val = parts[0] + '.' + parts.slice(1).join('');
+      }
+
+      // 4. 如果原本開頭是負號，補回負號
+      if (isNegative) {
+        val = '-' + val;
+      }
+
       input.value = val;
 
-      // 2. 實時更新畫面上的即時平均值
+      // 5. 實時更新即時平均值
       updateLiveAvg(type);
     }
 
